@@ -1,0 +1,5 @@
+videos/*_quadros/
+videos/previa_*/
+videos/*.mp4
+videos/*.mp3
+videos/*.tempos.json
