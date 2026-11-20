@@ -74,7 +74,16 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
 - [ ] CTA "Comenta ESTÉREO" no fim. Nenhum texto do criador de referência.
 - [ ] Duração entre 85 e 110 s (ou o que João pediu).
 
-## 7. Onde trabalhar / requisitos
+## 7. Teste do ambiente (fazer em silêncio logo depois da saudação, antes das perguntas)
+Rodar: `node -v && ffmpeg -version | head -1 && node -e "require('playwright')" && node scripts/shot.js videos/exemplo.js /tmp/teste 3`
+- Funcionou: seguir o fluxo completo normalmente.
+- Falhou: tentar instalar uma vez (`npm i -g playwright && npx playwright install chromium`; ffmpeg pelo gerenciador de pacotes).
+  Se ainda falhar, avisar o João em 1 frase: "Aqui eu consigo fazer as perguntas, o roteiro, a narração e o arquivo do vídeo,
+  mas não consigo gerar o MP4. Para renderizar, abra o Claude Code (claude.ai/code) e mande: renderize videos/<tema>.js."
+  E entregar o arquivo `videos/<tema>.js` pronto para ele baixar.
+- Se os comandos tiverem limite de tempo, renderizar em partes (o render.js retoma de onde parou: basta rodar de novo).
+
+## 8. Onde trabalhar / requisitos
 - Pasta da skill = pasta deste SKILL.md. Se ela for somente leitura, copiar `engine/`, `scripts/` e `videos/exemplo.js`
   para uma pasta de trabalho e rodar de lá (os scripts acham o motor por `../engine`).
 - Precisa de Node 18+, ffmpeg e Playwright com Chromium. Testar: `node -e "require('playwright')"`.
