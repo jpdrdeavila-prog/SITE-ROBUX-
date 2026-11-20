@@ -35,12 +35,14 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
    siglas soletradas quando preciso, pausas com reticências. Se a escolha for "sem voz", pular.
 4. **Arquivo do vídeo** `videos/<tema>.js` no formato de `references/motor.md`. Copiar `videos/exemplo.js` como base.
 5. **Prévia**: `node scripts/shot.js videos/<tema>.js` gera `contact.jpg` (1 a 3 quadros por cena). Olhar a folha antes de mandar
-   (checagem do item 5). Corrigir e gerar de novo até ficar limpo.
+   (checagem do item 5). Conferir também cada transição com 3 quadros (início, meio e fim: `shot.js ... saida T0 T0+0.3 T0+0.6`).
+   Corrigir e gerar de novo até ficar limpo.
    → ✅ **APROVAÇÃO 2**: mandar a folha de contato para o João.
 6. **Voz**: quando o MP3 chegar, rodar `node scripts/sync.js videos/<tema>.js voz.mp3`, conferir a tabela de tempos impressa
    (cada fala no lugar certo) e gerar a prévia de novo.
 7. **Render**: `node scripts/render.js videos/<tema>.js --voz voz.mp3 [--musica trilha.mp3] --jobs 3`
-   (rodar em segundo plano e avisar o João; referência: 26 s de vídeo = 1,4 min com 3 processos em 4 núcleos; 100 s ≈ 5 a 6 min).
+   (rodar em segundo plano e avisar o João; 100 s de vídeo ≈ 15 a 20 min com 3 processos em 4 núcleos).
+   Efeitos sonoros entram sozinhos (whoosh, pop, tique do contador, carimbo); `--sfx 0.6` abaixa, `--sem-sfx` desliga.
    Sem voz: `node scripts/render.js videos/<tema>.js --musica trilha.mp3` (tempo automático de 15 letras/s).
 8. **Conferência final**: extrair 1 quadro a cada 5 s (`ffmpeg -i video.mp4 -vf fps=1/5,scale=240:-1,tile=6x4 conf.jpg`) e olhar.
    → ✅ **APROVAÇÃO 3**: entregar o MP4 + legenda do post + fontes do 1º comentário + horário sugerido (18h).
@@ -53,7 +55,16 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
   nem textos, nomes de capítulo ou cenas iguais aos vídeos de referência. Usar a referência só como modelo de ritmo e estrutura.
 - Objetos sempre genéricos, sem logotipo real de marca. Nome de empresa pode aparecer como texto (ex.: "FERRARI" como rótulo).
 
-## 5. Checagem antes de mandar qualquer prévia ou vídeo
+## 5. Nível de acabamento (obrigatório, é o que deixa igual às referências)
+- **Mundo contínuo**: toda troca de capítulo com transição (`pan`, `up`, `zoom`); `pop` só dentro do mesmo capítulo; `flash` no CTA.
+- **Pelo menos 2 objetos que atravessam cenas** com `id` (o dinheiro que vira casa, o logo antigo que vira o novo...).
+- **Câmera viva**: no mínimo 3 cenas com `cam2` (travelling), `orbit` ou ângulo lateral/de cima. Nunca 3 cenas seguidas com a mesma câmera.
+- **Partículas** onde fizer sentido: `coins`/`bills` em dinheiro entrando, `rain` em clima tenso, `confetti` no fim, `sparkle` em revelação.
+- **Objeto-herói grande** e brilhante (dinheiro com glow), bloom e desfoque ligados (padrão).
+- **Objetos sob medida** para o tema quando a biblioteca não tiver: montar com `make` (primitivas) e, se ficar bom, salvar em `objects.js`.
+- **Cabeçalho mudando a cada frase** (número, tag, chip, contador, carimbo, título riscado).
+
+## 6. Checagem antes de mandar qualquer prévia ou vídeo
 - [ ] Todo número da tela = número da fala = número da tabela de fatos (mesmo arredondamento).
 - [ ] Datas e "hoje/ontem/segunda" batem com o dia em que João vai postar.
 - [ ] Ortografia e acentos (ç, ã, é) certos em legenda, tags e cabeçalho.
@@ -63,7 +74,7 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
 - [ ] CTA "Comenta ESTÉREO" no fim. Nenhum texto do criador de referência.
 - [ ] Duração entre 85 e 110 s (ou o que João pediu).
 
-## 6. Onde trabalhar / requisitos
+## 7. Onde trabalhar / requisitos
 - Pasta da skill = pasta deste SKILL.md. Se ela for somente leitura, copiar `engine/`, `scripts/` e `videos/exemplo.js`
   para uma pasta de trabalho e rodar de lá (os scripts acham o motor por `../engine`).
 - Precisa de Node 18+, ffmpeg e Playwright com Chromium. Testar: `node -e "require('playwright')"`.
@@ -75,4 +86,5 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
 - `references/roteiro.md`: fórmula de roteiro (análise dos vídeos de referência), legenda do post, regras de números.
 - `references/motor.md`: formato do arquivo de vídeo, cabeçalhos, câmera e lista de objetos 3D.
 - `engine/`: motor 3D (Three.js + HTML). `scripts/`: shot.js (prévia), sync.js (voz), render.js (MP4).
-- `videos/exemplo.js`: vídeo-modelo de 26 s que usa os recursos principais.
+- `videos/exemplo.js`: vídeo-modelo de 32 s com todas as transições, morph, câmera viajando, partículas e sons.
+- `scripts/sfx.js`: efeitos sonoros sintetizados (usado pelo render.js).

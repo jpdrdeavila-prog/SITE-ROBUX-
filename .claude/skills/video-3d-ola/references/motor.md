@@ -8,6 +8,9 @@ export default {
   tema: 'PLANO DA HERANÇA',        // aparece em "@ESTEREOLUDICO · PLANO DA HERANÇA"
   handle: '@ESTEREOLUDICO',
   cam: { d: 6.5 },                 // câmera padrão do vídeo (opcional)
+  trans: 'pan',                    // transição padrão entre cenas (ver "Transições")
+  transDur: 0.75,                  // duração da transição em segundos
+  fx: { bloom: 0.55, dof: true },  // brilho e desfoque de fundo (padrão ligado). shadows: 'vsm' = sombra mais macia (2x mais lento)
   cps: 15,                         // letras/s no tempo automático (sem voz)
   segs: [                          // 1 item = 1 legenda. *palavra* = destaque na cor da cena
     'Se você herdar *um milhão*',  // tempo automático
@@ -24,10 +27,34 @@ Com voz: `node scripts/sync.js videos/tema.js voz.mp3` cria `videos/tema.tempos.
   pill: 'A INFLAÇÃO',         // nome do capítulo na pílula
   bg: ['#2a0b18', '#6a1a2a'], // [céu topo, horizonte]; chão, névoa e cores @1..@4 saem daqui
   acc: '#ff8f86',             // cor de destaque (palavras *assim*, tag padrão)
-  cam: { d: 6.5, h: 0.9, ty: 0.55, tx: 0, yaw: 0, orbit: 0, push: 0.07, fov: 30 },
+  trans: 'pan',               // como esta cena ENTRA: pan | left | up | zoom | pop | flash | none
+  cam: { d: 6.5, h: 0.9, ty: 0.55, tx: 0, yaw: 0, orbit: 0, push: 0.07, fov: 30, shake: 0 },
+  cam2: { d: 5, yaw: 15, from: 0, to: 4 },  // opcional: câmera viaja de cam -> cam2 (segundos locais; padrão = cena toda)
+  fx: ['rain', 'coins'],      // partículas: rain | coins | bills | confetti | sparkle
   keep: false,                // true = objetos não encolhem no fim da cena
+  sfx: true,                  // false = sem som de transição nesta cena
   hdr: [ ... ], objs: [ ... ] }
 ```
+
+## Transições (o que deixa o vídeo "contínuo" como as referências)
+| trans | efeito | quando usar |
+|---|---|---|
+| `pan` (padrão) | câmera desliza para a direita: cena velha sai pela esquerda, nova entra pela direita | troca de capítulo, próximo item de uma lista |
+| `left` | igual ao pan, no sentido contrário | voltar a um ponto anterior |
+| `up` | mundo desce/sobe na vertical | mudar de assunto, "e aí vem a conta grande" |
+| `zoom` | câmera atravessa a cena velha (com clarão leve) | "a lição", revelação, mergulho num detalhe |
+| `pop` | objetos velhos encolhem e os novos saltam | dentro do mesmo capítulo, frase seguinte |
+| `flash` | clarão branco e corte | CTA final, virada forte |
+| `none` | corte seco | evitar |
+
+**Objeto que atravessa cenas (`id`)**: dê o mesmo `id` a um objeto em duas cenas seguidas. Ele não sai com a transição:
+desliza da posição/tamanho antigos para os novos. Se o `k` for diferente (ex.: `cashBlock` -> `house`), ele **se transforma**
+(o velho encolhe, o novo cresce no mesmo lugar, com faíscas). Use para "o dinheiro vira casa", "o logo antigo vira o novo",
+"o carro vira planta do terreno". Force com `morph: true/false`.
+
+**Câmera viva**: toda cena tem uma leve aproximação (`push`). Para movimentos de verdade use `cam2` (travelling, subir,
+girar em volta), `orbit` (gira devagar) ou `shake: 1` (tremida para impacto). Variar: uma cena de frente, a próxima de lado
+(`yaw: -25`), outra de cima (`h: 3, ty: 0.2`).
 Tempo dentro da cena: `at: n` = começa na n-ésima fala da cena (0 = primeira); `until: n` = some na fala n.
 Também aceita `t0`/`t1` em segundos desde o início da cena.
 
@@ -55,6 +82,9 @@ Câmera: `d` é a distância (6,5 = objeto grande; 8 = cena mais aberta). Visto 
 { chips: [['FACHADA', '#3a4bff'], ['PLACA', '#ff8a4a', 1]] }                  // chips; 3º item = at
 { stamp: 'NÃO É O CUSTO DO LOGO', stampc: '#ff5a5f', rot: -6 }                // carimbo torto
 { rows: [['DESVIO', '2 A 12 ANOS'], ['FRAUDE', '4 A 8 ANOS', 2]] }            // tabela; 3º item = at
+{ title: 'NÃO VENDE CORRIDA', strike: 0.8 }                                   // título que é riscado depois de 0,8 s
+{ timeline: ['2026', '2027', '2028', '2030'], active: lt => lt / 1.2 }        // linha do tempo que acende
+{ num: 'R$ 900', sfx: 'cash' }                                                // som específico (ou sfx:false)
 ```
 Para trocar um cabeçalho por outro, usar `until` no primeiro e `at` no segundo (senão eles empilham).
 
@@ -83,6 +113,10 @@ Opções marcadas com (fn) aceitam função do tempo: `level: lt => 0.2 + lt * 0
 `scaleBal{tilt(fn),left,right}` balança (left/right = objetos nos pratos) · `bars{vals,cols,g(fn)}` barras crescendo ·
 `steps{labels,lit(fn)}` degraus que acendem (PROTEGE/INVESTE/GASTA) · `arrow{up,col}` · `check` · `xMark` · `clock{speed}` relógio girando
 **Revelação e alerta**: `curtain{open(fn)}` cortina que abre · `cage` grade de prisão · `scaffold` obra cara brilhante
+**Partículas** (ou use `fx` da cena): `rain{n}` chuva · `coinRain{n}` moedas caindo · `billRain{n}` notas caindo · `confetti{n}` · `sparkles{n,burst}` brilhos
+**Extras**: `f1car{col}` carro de corrida · `boat{label}` barco · `water` lâmina d'água · `truck{txt}` caminhão · `storeFront{txt,col,sign}` fachada de loja/agência ·
+`logoCard{txt,sub,ink}` cartão de marca genérico (ANTES/DEPOIS) · `trophy` · `podium{labels}` · `magnifier` lupa · `laptop{txt}` · `suitcase` mala ·
+`bed` cama · `plane` avião · `bigCoin{txt}` moeda gigante girando · `gavel` martelo de juiz · `lineChart{vals,col,g(fn)}` gráfico de linha que se desenha
 **Primitivas**: `box(w,h,d,cor,{x,y,z,rd,glow})`, `sph(r,cor,{...})`, `cyl(r,h,cor,{...})`, `text({txt,h,col,y})`, `group(...)`.
 Cores aceitam hex, nomes (`red yel grn blu org cash gold white black`) e tokens do mundo `@1` (bem claro) a `@4` (escuro).
 
@@ -95,9 +129,21 @@ adicionar em `engine/objects.js` e no `LIB`.
 - Sugestões: loteria = lotteryGlobe; investimento = faucetBucket; garantia = dome; obra/gasto público = scaffold, field;
   crime = cage, envelope, xMark; lançamento/marca = curtain, card{easel}; perda = cashCrumble; audiência = eyes.
 
+## Efeitos sonoros (automáticos)
+O motor gera a lista de eventos e o `render.js` monta a trilha sozinho (sons sintetizados, sem direitos autorais):
+transição = whoosh (flash = ding, pop = pop) · número/título entrando = pop · contador = tique-tique · carimbo = stamp ·
+tag/chip/linha de tabela = tick · objeto `drop` = thud · objeto `pop` = pop baixinho.
+Trocar som de um item: `sfx: 'whoosh'|'pop'|'tick'|'stamp'|'thud'|'ding'|'cash'`; desligar: `sfx: false`.
+Volume geral: `--sfx 0.6` no render; sem efeitos: `--sem-sfx`.
+
+## Velocidade (referência: 4 núcleos, 3 processos)
+Qualidade completa ≈ 0,5 s por quadro por processo. Prévia rápida sem brilho/desfoque: `shot.js ... --rapido`.
+Vídeo de 100 s ≈ 15 a 20 min. Sempre rodar em segundo plano e avisar o João.
+
 ## Comandos
 ```bash
 node scripts/shot.js videos/tema.js                 # prévia: contact.jpg + lista de cenas e tempos
+node scripts/shot.js videos/tema.js saida 15.3 15.5 15.7   # conferir uma transição quadro a quadro
 node scripts/shot.js videos/tema.js saida 3 12.5    # quadros em segundos específicos
 node scripts/sync.js videos/tema.js voz.mp3         # casa as falas com a narração -> tema.tempos.json
 node scripts/render.js videos/tema.js --voz voz.mp3 --musica trilha.mp3 --jobs 3 [--hd]

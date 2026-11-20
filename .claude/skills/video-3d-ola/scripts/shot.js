@@ -4,11 +4,11 @@
 const path = require('path'), fs = require('fs'), { execFileSync } = require('child_process');
 const { openPage } = require('./_lib');
 (async () => {
-  const [video, outArg, ...ts] = process.argv.slice(2);
+  const [video, outArg, ...ts] = process.argv.slice(2).filter(x => x !== '--rapido');
   if (!video) { console.log('uso: node shot.js videos/tema.js [saida] [t1 t2 ...]'); process.exit(1); }
   const out = path.resolve(outArg || path.join(path.dirname(video), 'previa_' + path.basename(video, '.js')));
   fs.mkdirSync(out, { recursive: true });
-  const P = await openPage(video);
+  const P = await openPage(video, { fast: process.argv.includes('--rapido') });
   let times = ts.map(Number);
   if (!times.length) {
     P.info.scenes.forEach(s => {

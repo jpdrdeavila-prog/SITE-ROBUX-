@@ -1,5 +1,12 @@
 // Núcleo do motor "olá": tudo é função do tempo t (determinístico) -> dá pra renderizar em paralelo.
+// Recursos: bloom + desfoque de fundo, câmera com keyframes, transições (pan/up/zoom/pop/morph),
+// objetos que atravessam cenas (id), partículas, legenda karaokê e lista de eventos de som (INFO.events).
 import * as THREE from 'three';
+import { EffectComposer } from './lib/postprocessing/EffectComposer.js';
+import { RenderPass } from './lib/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from './lib/postprocessing/UnrealBloomPass.js';
+import { BokehPass } from './lib/postprocessing/BokehPass.js';
+import { OutputPass } from './lib/postprocessing/OutputPass.js';
 import { LIB, PAL, C } from './objects.js';
 
 const Q = new URLSearchParams(location.search);
@@ -14,7 +21,11 @@ let TEMPOS = null;
 if (Q.get('tempos')) TEMPOS = await (await fetch(Q.get('tempos'))).json();
 V.handle ??= '@ESTEREOLUDICO';
 V.fps ??= 30;
-V.cps ??= 15; // caracteres por segundo para tempo automático (sem voz)
+V.cps ??= 15;
+const FX = Object.assign({ bloom: 0.55, dof: true, aperture: 0.0016, maxblur: 0.006, shadows: 'pcf' }, V.fx || {});
+if (Q.get('fast')) Object.assign(FX, { bloom: 0, dof: false, shadows: 'pcf' });
+if (Q.get('dof') === '0') FX.dof = false; if (Q.get('bloom') === '0') FX.bloom = 0; if (Q.get('vsm') === '0') FX.shadows = 'pcf';
+const TR = V.transDur ?? 0.75; // duração da transição entre cenas
 
 // segs: "texto" ou [ini, fim, "texto"]
 const SEGS = []; { let cur = 0.35;
@@ -26,11 +37,9 @@ const SEGS = []; { let cur = 0.35;
   }); }
 const DUR = V.dur ?? +(SEGS.at(-1).b + 1.4).toFixed(2);
 
-// cenas: {from: índice da fala onde começa} ou {t0: segundos}
 const SC_ = V.scenes.map(s => ({ ...s }));
-SC_.forEach((s, i) => { s.T0 = s.t0 ?? (s.from != null ? (i === 0 ? 0 : SEGS[s.from].a - 0.12) : 0); });
+SC_.forEach((s, i) => { s.T0 = s.t0 ?? (s.from != null ? (i === 0 ? 0 : SEGS[s.from].a - 0.12) : 0); s.trans = i === 0 ? 'none' : (s.trans || V.trans || 'pan'); });
 SC_.forEach((s, i) => { s.T1 = i < SC_.length - 1 ? SC_[i + 1].T0 : DUR; });
-// tempo local de um elemento: at = nº da fala dentro da cena (0 = primeira), ou t0 em segundos
 function loc(sc, e, kAt = 'at', kT = 't0', def = 0) {
   if (e[kAt] != null && sc.from != null) { const sg = SEGS[sc.from + e[kAt]]; return sg ? sg.a - sc.T0 : def; }
   return e[kT] ?? def;
@@ -40,32 +49,46 @@ function loc(sc, e, kAt = 'at', kT = 't0', def = 0) {
 const cv = document.getElementById('gl');
 const R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true });
 R.setPixelRatio(1); R.setSize(W * SC, H * SC, false);
-R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
+R.shadowMap.enabled = true; R.shadowMap.type = FX.shadows === 'vsm' ? THREE.VSMShadowMap : THREE.PCFSoftShadowMap;
 R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05; R.outputColorSpace = THREE.SRGBColorSpace;
 const S = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 100);
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444455, 1.35); S.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(2.5, 6, 4); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 0.5, far: 20 });
-sun.shadow.radius = 6; sun.shadow.bias = -0.0005; S.add(sun);
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.5, far: 24 });
+sun.shadow.radius = 9; sun.shadow.blurSamples = 16; sun.shadow.bias = -0.0008; S.add(sun);
+const rim = new THREE.DirectionalLight(0xffffff, 0.45); rim.position.set(-3, 3, -4); S.add(rim);
 const floorM = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.95 });
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), floorM); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; S.add(floor);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), floorM); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; S.add(floor);
 S.fog = new THREE.Fog(0x000000, 8, 22);
 const skyCv = document.createElement('canvas'); skyCv.width = 4; skyCv.height = 256;
 const sky = new THREE.CanvasTexture(skyCv); sky.colorSpace = THREE.SRGBColorSpace; S.background = sky;
 
+// pós-processamento
+const composer = new EffectComposer(R);
+composer.setPixelRatio(1); composer.setSize(W * SC, H * SC);
+composer.addPass(new RenderPass(S, cam));
+const bokeh = new BokehPass(S, cam, { focus: 7, aperture: FX.aperture, maxblur: FX.maxblur });
+if (FX.dof) composer.addPass(bokeh);
+const bloom = new UnrealBloomPass(new THREE.Vector2(W * SC / 2, H * SC / 2), FX.bloom, 0.55, 0.78);
+if (FX.bloom > 0) composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
 // ---------- utilidades ----------
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const eOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const eIO = x => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
 const eBack = x => { x = clamp(x); const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
 const mix = (a, b, k) => new THREE.Color(a).lerp(new THREE.Color(b), k);
 const hex = c => '#' + c.getHexString();
+const DEFBG = ['#0a0a0c', '#24242c'];
 function palFrom(bg) {
   const top = new THREE.Color(bg[0]), bot = new THREE.Color(bg[1]);
   const L = bot.getHSL({}).l, light = L > 0.6;
   return {
     c1: hex(mix(bot, '#ffffff', light ? 0.7 : 0.62)), c2: hex(mix(bot, '#ffffff', light ? 0.35 : 0.32)),
-    c3: hex(mix(bot, light ? '#000' : '#fff', light ? 0.12 : 0.12)), c4: hex(mix(top, '#000', 0.35)),
+    c3: hex(mix(bot, light ? '#000' : '#fff', 0.12)), c4: hex(mix(top, '#000', 0.35)),
     floor: hex(mix(bot, light ? '#ffffff' : '#000', light ? 0.2 : 0.1)), fog: hex(bot), light,
   };
 }
@@ -75,21 +98,85 @@ function paintSky(top, bot) {
   g.fillStyle = gr; g.fillRect(0, 0, 4, 256); sky.needsUpdate = true;
 }
 
-// ---------- construção da cena ----------
-let curIdx = -1, root = null, items = [];
-function dispose(o) { o.traverse(n => { n.geometry?.dispose(); [].concat(n.material || []).forEach(m => { m.map?.dispose(); m.dispose(); }); }); }
-function build(i) {
-  if (root) { S.remove(root); dispose(root); }
-  const sc = SC_[i]; const P = palFrom(sc.bg || ['#0a0a0c', '#202026']);
-  Object.assign(PAL, P, { acc: sc.acc || '#7dffb0' });
-  root = new THREE.Group(); S.add(root); items = [];
-  (sc.objs || []).forEach(e => {
-    let o;
-    try { o = e.make ? e.make(LIB) : LIB[e.k](e.o || {}); } catch (err) { console.error('objeto', e.k, err); return; }
-    const holder = new THREE.Group(); holder.add(o); root.add(holder);
-    items.push({ e, o, holder, t0: loc(sc, e, 'at', 't0', 0), t1: e.until != null || e.t1 != null ? loc(sc, e, 'until', 't1', 1e9) : 1e9 });
+// ---------- câmera ----------
+const CAMDEF = { d: 6.5, h: 0.9, ty: 0.55, tx: 0, yaw: 0, push: 0.07, orbit: 0, fov: 30, shake: 0 };
+function camAt(sc, lt) {
+  const dur = sc.T1 - sc.T0, a = Object.assign({}, CAMDEF, V.cam || {}, sc.cam || {});
+  let c = a;
+  if (sc.cam2) { // keyframe final: interpola de cam -> cam2 entre cam2.from e cam2.to (segundos locais; padrão: cena toda)
+    const b = Object.assign({}, a, sc.cam2), f = sc.cam2.from ?? 0, t = sc.cam2.to ?? dur;
+    const k = eIO((lt - f) / Math.max(0.1, t - f)); c = {}; for (const key in a) c[key] = typeof a[key] === 'number' ? lerp(a[key], b[key], k) : a[key];
+  }
+  const push = sc.cam2 ? 0 : c.push;
+  return { ...c, d: c.d * (1 + push * (1 - eOut(lt / Math.max(1, dur)))), yaw: c.yaw + c.orbit * lt };
+}
+function placeCam(c, T) {
+  const yaw = c.yaw * Math.PI / 180, sh = c.shake ? Math.sin(T * 37) * c.shake * 0.02 : 0;
+  cam.fov = c.fov; cam.updateProjectionMatrix();
+  cam.position.set(c.tx + Math.sin(yaw) * c.d + sh, c.ty + c.h + sh * 0.6, Math.cos(yaw) * c.d);
+  cam.lookAt(c.tx, c.ty, 0);
+  return Math.hypot(c.d, c.h);
+}
+
+// ---------- construção das cenas ----------
+function dispose(o) { o?.traverse(n => { n.geometry?.dispose(); [].concat(n.material || []).forEach(m => { m.map?.dispose(); m.dispose(); }); }); }
+function makeObj(e) {
+  try { return e.make ? e.make(LIB) : LIB[e.k](e.o || {}); } catch (err) { console.error('objeto', e.k, err); return new THREE.Group(); }
+}
+function fxObjs(sc) { // atalhos de partículas: fx: ['rain','coins','bills','confetti','sparkle']
+  const map = { rain: 'rain', coins: 'coinRain', bills: 'billRain', confetti: 'confetti', sparkle: 'sparkles' };
+  return (sc.fx || []).map(f => (typeof f === 'string' ? { k: map[f] || f, type: 'none', fxp: true } : { type: 'none', fxp: true, ...f }));
+}
+function makeScene(i) {
+  const sc = SC_[i];
+  Object.assign(PAL, palFrom(sc.bg || DEFBG), { acc: sc.acc || '#7dffb0' });
+  const root = new THREE.Group(), pers = new THREE.Group(); S.add(root, pers);
+  const items = [...(sc.objs || []), ...fxObjs(sc)].map(e => {
+    const holder = new THREE.Group(), o = makeObj(e); holder.add(o); root.add(holder);
+    return { e, o, holder, t0: loc(sc, e, 'at', 't0', 0), t1: e.until != null || e.t1 != null ? loc(sc, e, 'until', 't1', 1e9) : 1e9 };
   });
-  curIdx = i;
+  return { i, sc, root, pers, items };
+}
+function dropScene(s) { if (!s) return; S.remove(s.root, s.pers); dispose(s.root); dispose(s.pers); }
+let cur = null, prev = null;
+function ensure(i) {
+  if (cur && cur.i === i) return;
+  if (cur && cur.i === i - 1) { dropScene(prev); prev = cur; }
+  else { dropScene(prev); dropScene(cur); prev = i > 0 ? makeScene(i - 1) : null; }
+  cur = makeScene(i);
+  // objetos com o mesmo id atravessam a cena (movem/transformam em vez de sumir)
+  if (prev) cur.items.forEach(it => {
+    if (!it.e.id) return; const p = prev.items.find(q => q.e.id === it.e.id); if (!p) return;
+    it.from = p; p.taken = true; it.morph = it.e.morph ?? (p.e.k !== it.e.k || !!p.e.make || !!it.e.make);
+    cur.pers.add(it.holder);
+    if (it.morph) { p.ghost = p.holder; cur.pers.add(p.holder); it.burst = new THREE.Group(); it.burst.add(LIB.sparkles({ n: 40, burst: true })); cur.pers.add(it.burst); }
+  });
+}
+
+// transformação de um item no tempo local lt da sua cena
+function xform(sc, it, lt, T, { outro = true, entry = true } = {}) {
+  const e = it.e, a = lt - it.t0, dur = sc.T1 - sc.T0;
+  const vis = a >= 0 && lt < it.t1 + 0.3;
+  let x = e.x || 0, y = e.y || 0, z = e.z || 0, s = e.s ?? 1, yaw = e.yaw || 0, sy = 1;
+  if (entry) {
+    const ty = e.type || 'pop', p = a / (e.in || 0.45);
+    if (ty === 'pop') s *= eBack(p);
+    else if (ty === 'drop') y += (1 - eOut(p)) * 2.6;
+    else if (ty === 'slide') x += (1 - eOut(p)) * 2.4 * (e.from === 'left' ? -1 : 1);
+    else if (ty === 'rise') sy = Math.max(0.001, eOut(p));
+    else if (ty === 'grow') s *= eOut(p);
+  }
+  if (e.upd) { const u = e.upd(Math.max(0, a), T) || {}; x += u.x || 0; y += u.y || 0; z += u.z || 0; yaw += u.yaw || 0; s *= u.s ?? 1; }
+  if (it.t1 < 1e8) s *= clamp((it.t1 + 0.3 - lt) / 0.3);
+  const nx = SC_[sc._i + 1];
+  if (outro && !sc.keep && nx && (nx.trans === 'pop' || nx.trans === 'flash') && !it.taken) s *= clamp((dur - lt) / 0.22);
+  return { vis, a, x, y, z, s: Math.max(0.0001, s), sy, yaw };
+}
+SC_.forEach((s, i) => (s._i = i));
+function apply(it, f, T) {
+  const h = it.holder; h.visible = f.vis; if (!f.vis) return;
+  h.position.set(f.x, f.y, f.z); h.rotation.y = f.yaw * Math.PI / 180; h.scale.set(f.s, f.s * f.sy, f.s);
+  it.o.traverse(n => n.userData.tick?.(Math.max(0, f.a), T));
 }
 
 // ---------- overlay ----------
@@ -108,44 +195,54 @@ function hdrHTML(sc, lt) {
     if (h.num || h.count) {
       let n = h.num;
       if (h.count) { const c = h.count, p = eOut((lt - a) / (c.dur || 1.4)); n = (c.pre || '') + fmt(c.from + (c.to - c.from) * p, c.dec || 0) + (c.suf || ''); }
-      inner = `<div class="num"><b style="color:${h.col || '#fff'}">${star(n, acc)}</b>${h.sub ? `<small>${h.sub}</small>` : ''}</div>`;
-    } else if (h.title) inner = `<div class="title ${h.box ? 'box' : ''}" style="color:${h.col || '#fff'}">${star(h.title, h.hl || acc)}</div>${h.sub ? `<div class="sub">${h.sub}</div>` : ''}`;
+      const strike = h.strike && lt >= a + (h.strike === true ? 0.6 : h.strike);
+      inner = `<div class="num"><b style="color:${h.col || '#fff'};${strike ? 'text-decoration:line-through;text-decoration-color:#ff5a5f;text-decoration-thickness:.12em' : ''}">${star(n, acc)}</b>${h.sub ? `<small>${h.sub}</small>` : ''}</div>`;
+    } else if (h.title) {
+      const strike = h.strike && lt >= a + (h.strike === true ? 0.6 : h.strike);
+      inner = `<div class="title ${h.box ? 'box' : ''}" style="color:${h.col || '#fff'};${strike ? 'text-decoration:line-through;text-decoration-color:#ff5a5f;text-decoration-thickness:.1em' : ''}">${star(h.title, h.hl || acc)}</div>${h.sub ? `<div class="sub">${h.sub}</div>` : ''}`;
+    }
     else if (h.tag) inner = `<div class="tag" style="background:${h.tagc || acc};color:${h.tagf || '#08130d'}">${h.tag}</div>`;
     else if (h.chips) inner = `<div class="chips">${h.chips.map(([t, c, at]) => {
       const on = at == null || lt >= loc(sc, { at }, 'at', 't0', 0); return `<span style="background:${c};color:#fff;opacity:${on ? 1 : 0.25}">${t}</span>`; }).join('')}</div>`;
     else if (h.stamp) inner = `<div class="stamp" style="color:${h.stampc || '#ff5a5f'}">${h.stamp}</div>`;
     else if (h.rows) inner = `<div class="rows">${h.rows.filter(r => r[2] == null || lt >= loc(sc, { at: r[2] }, 'at', 't0', 0)).map(r => `<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div>`;
+    else if (h.timeline) { const [ys, act] = [h.timeline, h.active ?? 0];
+      inner = `<div class="rows" style="flex-direction:row;gap:calc(16*var(--u))">${ys.map((y, j) => `<div style="opacity:${j <= (typeof act === 'function' ? act(lt - a) : act) ? 1 : 0.35}">${y}</div>`).join('')}</div>`; }
     return `<div class="h" style="${st}">${inner}</div>`;
   }).join('');
 }
-function capHTML(t, acc) {
+function capHTML(t) {
   const s = SEGS.find(s => t >= s.a - 0.05 && t < s.b + 0.2);
   if (!s) return '';
   const words = s.txt.split(/\s+/), plain = words.map(w => w.replace(/\*/g, '')), tot = plain.join(' ').length;
   let acc_ = 0; const p = (t - s.a) / Math.max(0.3, s.b - s.a);
   return words.map((w, i) => {
     const on = acc_ / tot <= p + 0.02; acc_ += plain[i].length + 1;
-    const k = /^\*.*\*[.,!?:;]*$/.test(w) || /^\*/.test(w);
-    return `<w class="${on ? 'on' : ''} ${k ? 'k' : ''}">${plain[i]}</w>`;
+    return `<w class="${on ? 'on' : ''} ${/^\*/.test(w) ? 'k' : ''}">${plain[i]}</w>`;
   }).join(' ');
 }
 const fx = $('fx'); fx.width = W * SC; fx.height = H * SC; const fg = fx.getContext('2d');
-function dots(t, light) {
+function dots(t, light, flash) {
   fg.clearRect(0, 0, fx.width, fx.height);
   for (let i = 0; i < 34; i++) {
-    const sx = Math.abs(Math.sin(i * 91.7)) , sy = Math.abs(Math.sin(i * 47.3)), sp = 0.006 + 0.01 * Math.abs(Math.sin(i * 3.1));
+    const sx = Math.abs(Math.sin(i * 91.7)), sy = Math.abs(Math.sin(i * 47.3)), sp = 0.006 + 0.01 * Math.abs(Math.sin(i * 3.1));
     const x = (sx + Math.sin(t * 0.25 + i) * 0.02) * fx.width, y = ((sy - t * sp) % 1 + 1) % 1 * fx.height;
     const r = (1.2 + 2.6 * Math.abs(Math.sin(i * 5.7))) * SC;
     fg.globalAlpha = 0.25 + 0.45 * Math.abs(Math.sin(i * 2.2 + t * 0.6));
     fg.fillStyle = light ? '#9aa3b5' : '#ffffff'; fg.beginPath(); fg.arc(x, y, r, 0, 7); fg.fill();
   }
+  if (flash > 0) { fg.globalAlpha = flash; fg.fillStyle = '#fff'; fg.fillRect(0, 0, fx.width, fx.height); }
+  // grão de filme sutil (determinístico)
+  fg.globalAlpha = 0.035;
+  for (let i = 0; i < 900; i++) { const v = Math.sin(i * 12.9898 + Math.floor(t * 30) * 78.233) * 43758.5453; const r = v - Math.floor(v);
+    fg.fillStyle = r > 0.5 ? '#fff' : '#000'; fg.fillRect((r * 7919 % 1) * fx.width, ((r * 104729) % 1) * fx.height, 2 * SC, 2 * SC); }
   fg.globalAlpha = 1;
 }
 const v3 = new THREE.Vector3(), bb = new THREE.Box3();
-function labels(lt) {
+function labels(scn) {
   const out = [];
-  items.forEach(it => {
-    if (!it.e.label || !it.holder.visible || lt < it.t0 + 0.2) return;
+  scn.items.forEach(it => {
+    if (!it.e.label || !it.holder.visible || it.holder.scale.x < 0.5) return;
     bb.setFromObject(it.holder); if (bb.isEmpty()) return;
     v3.set((bb.min.x + bb.max.x) / 2, bb.max.y + 0.12, (bb.min.z + bb.max.z) / 2).project(cam);
     out.push(`<div style="left:${(v3.x * 0.5 + 0.5) * W * SC}px;top:${(-v3.y * 0.5 + 0.5) * H * SC}px;color:${it.e.labelCol || '#fff'}">${it.e.label}</div>`);
@@ -155,55 +252,100 @@ function labels(lt) {
 
 // ---------- render ----------
 function sceneAt(t) { let i = 0; SC_.forEach((s, k) => { if (t >= s.T0) i = k; }); return i; }
+const OFF = { pan: [3.4, 0, 0], up: [0, -3.2, 0], left: [-3.4, 0, 0] };
 function renderAt(t) {
-  const i = sceneAt(t), sc = SC_[i], lt = t - sc.T0, dur = sc.T1 - sc.T0;
-  if (i !== curIdx) build(i);
-  // cores com transição de 0,5 s
-  const P = palFrom(sc.bg || ['#0a0a0c', '#202026']), prev = i > 0 ? SC_[i - 1] : sc, Pp = palFrom(prev.bg || ['#0a0a0c', '#202026']);
-  const k = eOut(lt / 0.5), bg0 = sc.bg || ['#0a0a0c', '#202026'], bgp = prev.bg || bg0;
-  const top = hex(mix(bgp[0], bg0[0], k)), bot = hex(mix(bgp[1], bg0[1], k));
-  paintSky(top, bot); floorM.color.set(mix(Pp.floor, P.floor, k)); S.fog.color.set(bot);
-  hemi.groundColor.set(mix(Pp.c4, P.c4, k));
-  // câmera: leve aproximação durante a cena
-  const c = Object.assign({ d: 6.5, h: 0.9, ty: 0.55, tx: 0, yaw: 0, push: 0.07, orbit: 0, fov: 30 }, V.cam || {}, sc.cam || {});
-  const d = c.d * (1 + c.push * (1 - eOut(lt / Math.max(1, dur)))), yaw = (c.yaw + c.orbit * lt) * Math.PI / 180;
-  cam.fov = c.fov; cam.updateProjectionMatrix();
-  cam.position.set(c.tx + Math.sin(yaw) * d, c.ty + c.h, Math.cos(yaw) * d); cam.lookAt(c.tx, c.ty, 0);
-  S.fog.near = d + 0.5; S.fog.far = d + 9;
-  // objetos
-  const out = clamp((dur - lt) / 0.22);
-  items.forEach(it => {
-    const e = it.e, a = lt - it.t0, h = it.holder;
-    h.visible = a >= 0 && lt < it.t1 + 0.3;
-    if (!h.visible) return;
-    const ex = it.t1 < 1e8 ? clamp((it.t1 + 0.3 - lt) / 0.3) : 1;
-    let x = e.x || 0, y = e.y || 0, z = e.z || 0, s = e.s ?? 1, yaw = (e.yaw || 0) * Math.PI / 180, sy = 1;
-    const ty = e.type || 'pop', p = a / (e.in || 0.45);
-    if (ty === 'pop') s *= eBack(p);
-    else if (ty === 'drop') y += (1 - eOut(p)) * 2.6;
-    else if (ty === 'slide') x += (1 - eOut(p)) * 2.4 * (e.from === 'left' ? -1 : 1);
-    else if (ty === 'rise') sy = Math.max(0.001, eOut(p));
-    if (e.upd) { const u = e.upd(a, t) || {}; x += u.x || 0; y += u.y || 0; z += u.z || 0; yaw += (u.yaw || 0) * Math.PI / 180; s *= u.s ?? 1; }
-    s *= Math.max(0.001, Math.min(ex, sc.keep ? 1 : out));
-    h.position.set(x, y, z); h.rotation.y = yaw; h.scale.set(s, s * sy, s);
-    it.o.userData.tick?.(a, t); it.o.traverse(n => n !== it.o && n.userData.tick?.(a, t));
+  const i = sceneAt(t), sc = SC_[i], lt = t - sc.T0;
+  ensure(i);
+  const tr = sc.trans, inT = i > 0 && lt < TR && !['pop', 'none', 'flash'].includes(tr) && !(tr === 'zoom' && lt > TR * 0.5), k = eIO(lt / TR);
+  // cores
+  const bg0 = sc.bg || DEFBG, bgp = (SC_[i - 1] || sc).bg || bg0, P = palFrom(bg0), Pp = palFrom(bgp), kc = i > 0 ? eOut(lt / (tr === 'pop' ? 0.5 : TR)) : 1;
+  const top = hex(mix(bgp[0], bg0[0], kc)), bot = hex(mix(bgp[1], bg0[1], kc));
+  paintSky(top, bot); floorM.color.set(mix(Pp.floor, P.floor, kc)); S.fog.color.set(bot); hemi.groundColor.set(mix(Pp.c4, P.c4, kc));
+  // câmera
+  let c = camAt(sc, lt);
+  if (inT && prev) { const pc = camAt(prev.sc, prev.sc.T1 - prev.sc.T0); const m = {}; for (const key in c) m[key] = typeof c[key] === 'number' ? lerp(pc[key], c[key], k) : c[key]; c = m; }
+  const focus = placeCam(c, t);
+  S.fog.near = c.d + 0.5; S.fog.far = c.d + 9;
+  bokeh.uniforms.focus.value = focus; bloom.strength = P.light ? FX.bloom * 0.25 : FX.bloom;
+  // offsets de transição
+  const off = OFF[tr] || [0, 0, 0];
+  cur.root.position.set(0, 0, 0); cur.root.scale.setScalar(1);
+  if (prev) { prev.root.visible = prev.pers.visible = inT; prev.root.position.set(0, 0, 0); prev.root.scale.setScalar(1); }
+  if (inT) {
+    if (tr === 'zoom') { const kz = eOut(lt / (TR * 0.5)); prev.root.scale.setScalar(1 + kz * 0.9); prev.root.position.z = kz * 2.2; cur.root.scale.setScalar(0.4 + 0.6 * k); }
+    else { prev.root.position.set(-off[0] * k, -off[1] * k, 0); cur.root.position.set(off[0] * (1 - k), off[1] * (1 - k), 0); }
+  }
+  if (tr === 'zoom' && i > 0 && lt < TR) cur.root.scale.setScalar(0.4 + 0.6 * k);
+  if (prev) { prev.pers.position.copy(prev.root.position); prev.pers.scale.copy(prev.root.scale);
+    prev.items.forEach(it => { if (it.burst) it.burst.visible = false; if (it.from && it.morph) it.from.holder.visible = false; }); }
+  // itens da cena anterior durante a transição
+  if (prev) prev.items.forEach(it => {
+    if (it.taken && !it.ghost) { it.holder.visible = false; return; }
+    if (it.ghost) return; // tratado pelo item novo
+    if (!inT) { it.holder.visible = false; return; }
+    apply(it, xform(prev.sc, it, prev.sc.T1 - prev.sc.T0 + lt, t, { outro: false }), t);
   });
-  R.render(S, cam);
+  // itens da cena atual
+  cur.items.forEach(it => {
+    if (it.from) {
+      const f = xform(sc, it, lt, t, { entry: false }), pf = xform(prev.sc, it.from, prev.sc.T1 - prev.sc.T0, t, { outro: false });
+      const km = eIO(lt / TR);
+      const g = { ...f, x: lerp(pf.x, f.x, km), y: lerp(pf.y, f.y, km), z: lerp(pf.z, f.z, km), s: lerp(pf.s, f.s, km), yaw: lerp(pf.yaw, f.yaw, km) };
+      if (it.morph) {
+        const kk = clamp(lt / (TR * 0.9));
+        apply(it, { ...g, vis: true, s: g.s * eBack(clamp((kk - 0.35) / 0.65)) }, t);
+        const gh = it.from; gh.holder.visible = kk < 0.5; gh.holder.position.set(g.x, g.y, g.z); gh.holder.scale.setScalar(Math.max(0.0001, pf.s * (1 - eOut(kk / 0.5))));
+        gh.o.traverse(n => n.userData.tick?.(prev.sc.T1 - prev.sc.T0, t));
+        it.burst.visible = lt < 1.1; it.burst.position.set(g.x, g.y + 0.4, g.z); it.burst.traverse(n => n.userData.tick?.(lt, t));
+      } else apply(it, { ...g, vis: true }, t);
+      return;
+    }
+    apply(it, xform(sc, it, lt, t), t);
+  });
+  // sombra calculada 1x por quadro (o passe de desfoque renderiza a cena de novo e não precisa recalcular)
+  R.shadowMap.autoUpdate = false; R.shadowMap.needsUpdate = true;
+  if (FX.bloom > 0 || FX.dof) composer.render(); else R.render(S, cam);
   // overlay
   const acc = sc.acc || '#7dffb0';
   document.documentElement.style.setProperty('--acc', acc);
+  const pillK = i > 0 ? eOut(lt / 0.35) : 1;
   $('pill').querySelector('span').textContent = sc.pill || '';
+  $('pill').style.opacity = pillK; $('pill').style.transform = `translateX(${(1 - pillK) * -20 * SC}px)`;
   $('pill').querySelector('i').style.background = P.light ? '#1d1d25' : '#e9fff2';
   $('pill').style.background = P.light ? 'rgba(0,0,0,.08)' : 'rgba(0,0,0,.42)';
   $('pill').style.color = $('handle').style.color = P.light ? '#1d1d25' : '#fff';
   $('hdr').innerHTML = hdrHTML(sc, lt);
-  const ch = capHTML(t, acc); $('cap').firstElementChild.innerHTML = ch; $('cap').style.opacity = ch ? 1 : 0;
-  dots(t, P.light); labels(lt);
+  const ch = capHTML(t); $('cap').firstElementChild.innerHTML = ch; $('cap').style.opacity = ch ? 1 : 0;
+  dots(t, P.light, i > 0 && tr === 'flash' ? 0.85 * (1 - eOut(lt / 0.35)) : i > 0 && tr === 'zoom' ? 0.35 * Math.max(0, 1 - Math.abs(lt - TR * 0.45) / (TR * 0.25)) : 0); labels(cur);
   $('vig').style.opacity = P.light ? 0.55 : 1;
+}
+
+// ---------- eventos de som (usados pelo render.js para montar a trilha de efeitos) ----------
+function events() {
+  const ev = [], add = (t, type, g = 1) => ev.push({ t: +t.toFixed(3), type, g });
+  SC_.forEach((sc, i) => {
+    if (i > 0 && sc.trans !== 'none' && sc.sfx !== false) add(sc.T0, sc.trans === 'pop' ? 'pop' : sc.trans === 'flash' ? 'ding' : 'whoosh', 0.8);
+    (sc.hdr || []).forEach(h => {
+      if (h.sfx === false) return; const a = sc.T0 + loc(sc, h, 'at', 't0', 0);
+      if (h.sfx) return add(a, h.sfx);
+      if (h.count) { const n = Math.round((h.count.dur || 1.4) / 0.07); for (let j = 0; j < n; j++) add(a + j * 0.07 * (1 + j / n), 'tick', 0.5); }
+      else if (h.stamp) add(a, 'stamp');
+      else if (h.num || h.title) add(a, 'pop', 0.9);
+      else if (h.tag || h.chips || h.rows) add(a, 'tick', 0.8);
+    });
+    (sc.objs || []).forEach(e => {
+      if (e.sfx === false || e.id && i > 0 && (SC_[i - 1].objs || []).some(q => q.id === e.id)) return;
+      const a = sc.T0 + loc(sc, e, 'at', 't0', 0);
+      if (e.sfx) return add(a, e.sfx);
+      if (a - sc.T0 < 0.05 && sc.trans !== 'pop') return; // entra junto com a transição
+      if (e.type === 'drop') add(a + (e.in || 0.45) * 0.85, 'thud', 0.8); else if (!e.type || e.type === 'pop') add(a, 'pop', 0.45);
+    });
+  });
+  return ev.sort((a, b) => a.t - b.t);
 }
 
 await document.fonts.load('900 40px Inter'); await document.fonts.load('800 40px Inter'); await document.fonts.load('700 20px Mono'); await document.fonts.ready;
 window.renderAt = t => { renderAt(t); return true; };
-window.INFO = { dur: DUR, fps: V.fps, segs: SEGS, scenes: SC_.map(s => ({ pill: s.pill, t0: +s.T0.toFixed(2), t1: +s.T1.toFixed(2) })) };
+window.INFO = { dur: DUR, fps: V.fps, segs: SEGS, events: events(), scenes: SC_.map(s => ({ pill: s.pill, trans: s.trans, t0: +s.T0.toFixed(2), t1: +s.T1.toFixed(2) })) };
 renderAt(+(Q.get('t') || 0));
 window.READY = true;

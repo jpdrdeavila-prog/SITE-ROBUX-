@@ -378,7 +378,142 @@ export function doc({ col = '#f4f4f6', lines = 5 } = {}) {
   return g;
 }
 
+// ---------- PARTÍCULAS (usar em fx:[...] da cena ou como objeto) ----------
+const rng = seed => { let s = seed; return () => ((s = (s * 16807) % 2147483647) / 2147483647); };
+function particles({ n, geo, m, area = [3.4, 4, 5], speed = [0.6, 1.2], spin = 0, seed = 3, col }) {
+  const g = new THREE.Group(), im = new THREE.InstancedMesh(geo, m, n); im.castShadow = false; g.add(im);
+  const r = rng(seed), P = Array.from({ length: n }, () => [(r() - 0.5) * area[0], r(), (r() - 0.7) * area[2], lerpN(speed[0], speed[1], r()), r() * 6]);
+  if (col) P.forEach((_, i) => im.setColorAt(i, C(col[i % col.length])));
+  const o = new THREE.Object3D();
+  g.userData.tick = (lt, T) => {
+    P.forEach(([x, y0, z, sp, ph], i) => {
+      const y = ((y0 - T * sp / area[1]) % 1 + 1) % 1 * area[1];
+      o.position.set(x + Math.sin(T * 0.8 + ph) * 0.05 * spin, y, z); o.rotation.set(spin * (T * 2 + ph), spin * (T * 3 + ph), spin * ph);
+      o.updateMatrix(); im.setMatrixAt(i, o.matrix);
+    });
+    im.instanceMatrix.needsUpdate = true;
+  };
+  return g;
+}
+const lerpN = (a, b, k) => a + (b - a) * k;
+export function rain({ n = 160 } = {}) {
+  return particles({ n, geo: new THREE.BoxGeometry(0.008, 0.22, 0.008), m: new THREE.MeshBasicMaterial({ color: '#dfe6f0', transparent: true, opacity: 0.55 }), speed: [6, 9], area: [5, 4, 6] });
+}
+export function coinRain({ n = 40 } = {}) {
+  const geo = new THREE.CylinderGeometry(0.07, 0.07, 0.015, 20); geo.rotateX(Math.PI / 2);
+  return particles({ n, geo, m: mat(GOLD, { glow: 0.25, r: 0.3 }), speed: [1.2, 2], spin: 1, seed: 11, area: [3.4, 4, 4] });
+}
+export function billRain({ n = 36 } = {}) {
+  return particles({ n, geo: new THREE.BoxGeometry(0.2, 0.01, 0.1), m: mat(CASH, { glow: 0.4 }), speed: [0.8, 1.4], spin: 1, seed: 21, area: [3.4, 4, 4] });
+}
+export function confetti({ n = 90 } = {}) {
+  return particles({ n, geo: new THREE.PlaneGeometry(0.05, 0.03), m: new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, color: '#ffffff' }), speed: [0.7, 1.3], spin: 1, seed: 5, area: [3.4, 4, 4], col: ['#ff5a5f', '#ffd24a', '#5dff9e', '#4d7cff', '#ff8af0'] });
+}
+export function sparkles({ n = 30, burst = false, col = '#ffffff' } = {}) {
+  const g = new THREE.Group(), m = mat(col, { glow: 0.8 }), r = rng(9), ps = [];
+  for (let i = 0; i < n; i++) { const p = sph(0.008 + r() * 0.012, null, { m }); p.castShadow = false; p.userData.d = [r() * 6.28, r() * 3.14, 0.4 + r() * 0.8, r() * 6]; g.add(p); ps.push(p); }
+  g.userData.tick = (lt, T) => ps.forEach(p => {
+    const [a, b, sp, ph] = p.userData.d;
+    if (burst) { const k = 1 - Math.pow(1 - Math.min(1, lt / 0.8), 3), rr = k * sp * 0.9; p.position.set(Math.cos(a) * Math.sin(b) * rr, Math.cos(b) * rr * 0.7, Math.sin(a) * Math.sin(b) * rr); p.scale.setScalar(Math.max(0.001, 1 - lt / 1.0)); }
+    else { p.position.set(Math.cos(a) * sp, 0.3 + Math.sin(b) * sp * 0.8, Math.sin(a) * 0.4); p.scale.setScalar(Math.max(0.001, Math.abs(Math.sin(T * 2 + ph)))); }
+  });
+  return g;
+}
+
+// ---------- OBJETOS EXTRAS ----------
+export function f1car({ col = '#5dff9e', glow = 0.35 } = {}) {
+  const m = mat(col, { glow, r: 0.35 }), k = mat('#26262e', { r: 0.8 }), w = mat('#e9e9ee');
+  const g = group(box(1.7, 0.12, 0.34, null, { m, y: 0.1, rd: 0.05 }), box(0.5, 0.16, 0.3, null, { m, x: 0.05, y: 0.18, rd: 0.06 }),
+    box(0.12, 0.04, 0.9, null, { m, x: 0.95, y: 0.08, rd: 0.015 }), box(0.14, 0.2, 0.8, null, { m, x: -0.85, y: 0.32, rd: 0.02 }),
+    box(0.06, 0.2, 0.06, null, { m: k, x: -0.8, y: 0.12 }), sph(0.075, null, { m: w, x: 0.08, y: 0.36 }));
+  [[0.6, 0.38], [-0.6, 0.38], [0.6, -0.38], [-0.6, -0.38]].forEach(([x, z]) => { const c = cyl(0.16, 0.16, null, { m: k, seg: 24 }); c.rotation.x = Math.PI / 2; c.position.set(x, 0.16, z); g.add(c); });
+  g.userData.tick = (lt) => { g.position.y = Math.abs(Math.sin(lt * 18)) * 0.006; };
+  return g;
+}
+export function boat({ col = '#f3e9da', hull = '#f0d2b4', label = '' } = {}) {
+  const g = group(box(1.4, 0.22, 0.5, hull, { rd: 0.1 }), box(0.7, 0.3, 0.38, col, { x: -0.05, y: 0.22, rd: 0.04 }), box(0.4, 0.14, 0.3, col, { x: -0.05, y: 0.52, rd: 0.03 }),
+    box(0.3, 0.05, 0.01, BLU, { x: -0.05, y: 0.36, z: 0.195, rd: 0.01 }));
+  if (label) { const t = text({ txt: label, h: 0.06, col: '#333' }); t.position.set(-0.05, 0.27, 0.2); g.add(t); }
+  g.userData.tick = (lt) => { g.rotation.z = Math.sin(lt * 1.4) * 0.03; g.position.y = Math.sin(lt * 1.8) * 0.02; };
+  return g;
+}
+export function water({ col = '#4d7cff', w = 4, d = 3 } = {}) { const p = box(w, 0.04, d, col, { rd: 0, glow: 0.1 }); p.material.roughness = 0.2; return p; }
+export function truck({ col = '#f4f4f6', cab = BLU, txt = '' } = {}) {
+  const w = mat('#2a2a33'), g = group(box(1.0, 0.5, 0.5, col, { x: -0.2, y: 0.12, rd: 0.03 }), box(0.36, 0.4, 0.48, cab, { x: 0.52, y: 0.12, rd: 0.06 }),
+    box(0.02, 0.16, 0.36, '#bfe2ff', { x: 0.7, y: 0.32, rd: 0.01, glow: 0.2 }));
+  [[-0.45, .25], [0.1, .25], [0.52, .25], [-0.45, -.25], [0.1, -.25], [0.52, -.25]].forEach(([x, z]) => { const c = cyl(0.11, 0.08, null, { m: w }); c.rotation.x = Math.PI / 2; c.position.set(x, 0.11, z); g.add(c); });
+  if (txt) { const t = text({ txt, h: 0.09, col: '#333' }); t.position.set(-0.2, 0.32, 0.256); g.add(t); }
+  return g;
+}
+export function storeFront({ col = '#4b5cff', sign = ORG, door = '#1d1d25', txt = '', w = 1.0, h = 0.75 } = {}) {
+  const g = group(box(w, h, 0.5, col, { rd: 0.03 }), box(w * 0.86, 0.18, 0.06, sign, { y: h - 0.08, z: 0.26, rd: 0.03, glow: 0.25 }),
+    box(w * 0.28, h * 0.55, 0.02, door, { z: 0.255, rd: 0.01 }));
+  if (txt) { const t = text({ txt, h: 0.09, col: '#fff' }); t.position.set(0, h - 0.05, 0.3); g.add(t); }
+  return g;
+}
+export function logoCard({ txt = 'MARCA', sub = '', col = '#ffffff', ink = '#1f3fbf', w = 0.95, h = 0.36 } = {}) {
+  const g = card({ txt, w, h, col, ink });
+  if (sub) { const t = text({ txt: sub, h: 0.04, col: '#667' }); t.position.set(0, h - 0.07, 0.02); g.add(t); }
+  return g;
+}
+export function trophy({ col = GOLD } = {}) {
+  const m = mat(col, { glow: 0.25, r: 0.25 });
+  const cup = mesh(new THREE.CylinderGeometry(0.22, 0.1, 0.3, 28), m); cup.position.y = 0.55;
+  return group(box(0.32, 0.08, 0.32, '#3a3a44'), cyl(0.04, 0.32, null, { m, y: 0.08 }), cup,
+    ...[-1, 1].map(s => { const h = mesh(new THREE.TorusGeometry(0.08, 0.02, 8, 20), m); h.position.set(s * 0.24, 0.57, 0); h.rotation.y = Math.PI / 2; return h; }));
+}
+export function podium({ cols = ['@2', '@1', '@3'], labels = ['2', '1', '3'] } = {}) {
+  const hs = [0.32, 0.48, 0.22], g = new THREE.Group();
+  hs.forEach((h, i) => { const b = box(0.42, h, 0.4, cols[i], { x: (i - 1) * 0.44 }); g.add(b); const t = text({ txt: labels[i], h: 0.1, col: '#1d1d25' }); t.position.set((i - 1) * 0.44, h * 0.3, 0.205); g.add(t); });
+  return g;
+}
+export function magnifier({ col = '#e9e9ee' } = {}) {
+  const ring = mesh(new THREE.TorusGeometry(0.22, 0.035, 12, 40), mat(col, { r: 0.3 })); ring.position.y = 0.62;
+  const glass = mesh(new THREE.CircleGeometry(0.2, 32), mat('#bfe2ff', { op: 0.35, r: 0.05 }), false); glass.position.y = 0.62;
+  const h = box(0.06, 0.34, 0.06, '#3a3a44', { base: false }); h.position.set(0.22, 0.3, 0); h.rotation.z = 0.7;
+  return group(ring, glass, h);
+}
+export function laptop({ txt = '', screen = '#f4f4f6' } = {}) {
+  const lid = new THREE.Group(); lid.position.set(0, 0.04, -0.22); lid.rotation.x = -0.25;
+  lid.add(box(0.8, 0.5, 0.03, '#3a3a44', { rd: 0.02 }), box(0.72, 0.42, 0.01, screen, { y: 0.04, z: 0.017, rd: 0.01, glow: 0.25 }));
+  if (txt) { const t = text({ txt, h: 0.08, col: '#1d1d25' }); t.position.set(0, 0.18, 0.025); lid.add(t); }
+  return group(box(0.82, 0.04, 0.5, '#4a4a55', { rd: 0.015 }), lid);
+}
+export function suitcase({ col = '#3a3a44', open = 0 } = {}) {
+  const g = group(box(0.7, 0.45, 0.22, col, { rd: 0.05 }), box(0.22, 0.06, 0.05, '#222', { y: 0.47, rd: 0.02 }));
+  return g;
+}
+export function bed({ col = '#6a4fc9', sheet = '#ff8f86' } = {}) {
+  return group(box(1.0, 0.22, 0.6, col, { rd: 0.04 }), box(0.9, 0.08, 0.56, '#f4f4f6', { y: 0.22, rd: 0.03 }), box(0.6, 0.04, 0.58, sheet, { x: 0.15, y: 0.3, rd: 0.02 }),
+    box(0.06, 0.45, 0.6, col, { x: -0.5, rd: 0.03 }), box(0.18, 0.08, 0.36, '#ffffff', { x: -0.36, y: 0.3, rd: 0.03 }));
+}
+export function plane({ col = '#f4f4f6' } = {}) {
+  const m = mat(col), body = cap(0.09, 0.9, null, { m }); body.rotation.z = Math.PI / 2; body.position.y = 0.5;
+  return group(body, box(0.25, 0.02, 1.0, null, { m, y: 0.48 }), box(0.12, 0.02, 0.36, null, { m, x: -0.48, y: 0.52 }), box(0.12, 0.18, 0.02, null, { m, x: -0.5, y: 0.6 }));
+}
+export function bigCoin({ txt = 'R$', col = GOLD } = {}) {
+  const c = cyl(0.42, 0.08, col, { glow: 0.2, seg: 48 }); c.rotation.x = Math.PI / 2; c.position.y = 0.45;
+  const t = text({ txt, h: 0.22, col: '#8a6a10' }); t.position.set(0, 0.34, 0.045);
+  const g = group(c, t); g.userData.tick = (lt) => { g.rotation.y = Math.sin(lt * 1.5) * 0.4; }; return g;
+}
+export function gavel({ col = '#8a5a34' } = {}) {
+  const head = cyl(0.08, 0.36, col); head.rotation.z = Math.PI / 2; head.position.set(0.18, 0.5, 0);
+  const handle = box(0.04, 0.5, 0.04, col, { base: false }); handle.position.set(0, 0.3, 0); handle.rotation.z = -0.5;
+  const g = group(cyl(0.2, 0.06, col), head, handle); return g;
+}
+export function lineChart({ vals = [0.2, 0.35, 0.3, 0.6, 0.9], col = CASH, g: grow = 1 } = {}) {
+  const G = new THREE.Group(), n = vals.length, pts = vals.map((v, i) => new THREE.Vector3((i / (n - 1) - 0.5) * 1.4, 0.1 + v * 1.1, 0));
+  const segs = pts.slice(1).map((p, i) => { const a = pts[i], d = p.clone().sub(a), b = box(d.length(), 0.05, 0.05, col, { glow: 0.5, base: false });
+    b.position.copy(a).add(d.clone().multiplyScalar(0.5)); b.rotation.z = Math.atan2(d.y, d.x); G.add(b); return b; });
+  const dots = pts.map(p => { const s = sph(0.045, col, { glow: 0.6 }); s.position.copy(p); G.add(s); return s; });
+  G.add(box(1.6, 0.02, 0.02, '@1', { y: 0.05 }));
+  G.userData.tick = (lt) => { const k = Math.min(1, Math.max(0, val(grow, lt))) * (n - 1); segs.forEach((s, i) => (s.visible = i < k)); dots.forEach((d, i) => (d.visible = i <= k)); };
+  return G;
+}
+
 export const LIB = {
+  rain, coinRain, billRain, confetti, sparkles, f1car, boat, water, truck, storeFront, logoCard, trophy, podium, magnifier,
+  laptop, suitcase, bed, plane, bigCoin, gavel, lineChart,
   cashBlock, cashCrumble, coinStack, bill, piggy, card, questionBox, ticket, sign, man, crowd, eyes, house, field, tower, skyline,
   pentaHouse, bank, car, globe, lotteryGlobe, faucetBucket, dome, scaleBal, bars, steps, check, xMark, arrow, clock, calendar,
   table, phone, curtain, cage, scaffold, envelope, doc, text, box, sph, cyl, group,

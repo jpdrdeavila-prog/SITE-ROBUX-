@@ -19,12 +19,12 @@ function serve(videoFile) {
   });
 }
 
-async function openPage(videoFile, { scale = 1 } = {}) {
+async function openPage(videoFile, { scale = 1, fast = false, extra = '' } = {}) {
   const { chromium } = require('playwright');
   const srv = await serve(videoFile);
   const base = path.basename(videoFile), tj = base.replace(/\.js$/, '.tempos.json');
   const hasT = fs.existsSync(path.join(path.dirname(path.resolve(videoFile)), tj));
-  const url = `http://127.0.0.1:${srv.address().port}/engine/index.html?video=/v/${encodeURIComponent(base)}&scale=${scale}` + (hasT ? `&tempos=/v/${encodeURIComponent(tj)}` : '');
+  const url = `http://127.0.0.1:${srv.address().port}/engine/index.html?video=/v/${encodeURIComponent(base)}&scale=${scale}${fast ? '&fast=1' : ''}${extra}` + (hasT ? `&tempos=/v/${encodeURIComponent(tj)}` : '');
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const page = await browser.newPage({ viewport: { width: 720 * scale, height: 1280 * scale }, deviceScaleFactor: 1 });
   const errs = [];
