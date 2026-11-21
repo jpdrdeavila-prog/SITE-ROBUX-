@@ -43,6 +43,23 @@ html,body{width:var(--W);height:var(--H);overflow:hidden;background:#000}
 .rows{display:flex;flex-direction:column;gap:calc(6*var(--u));background:rgba(8,10,14,.82);padding:calc(12*var(--u)) calc(16*var(--u));border-radius:calc(12*var(--u))}
 .rows div{display:flex;justify-content:space-between;gap:calc(28*var(--u));font:700 calc(15*var(--u)) Mono,monospace;letter-spacing:.06em;text-transform:uppercase}
 .rows div span:last-child{color:#7dffb0}
+#fontes{position:absolute;left:calc(52*var(--u));top:calc(158*var(--u));font:500 calc(9.5*var(--u)) Mono,monospace;letter-spacing:.1em;opacity:.55;text-transform:uppercase;white-space:nowrap}
+#mid{position:absolute;left:0;right:0;top:calc(760*var(--u));display:flex;flex-direction:column;align-items:center;gap:calc(8*var(--u))}
+.big{font:900 calc(64*var(--u))/1 Inter;letter-spacing:-.05em;text-shadow:0 calc(4*var(--u)) calc(26*var(--u)) rgba(0,0,0,.55)}
+.bigsub{background:rgba(8,10,14,.85);padding:calc(3*var(--u)) calc(9*var(--u));border-radius:calc(4*var(--u));font:700 calc(9.5*var(--u)) Mono,monospace;letter-spacing:.1em;text-transform:uppercase}
+.share{width:calc(56*var(--u));height:calc(56*var(--u));border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 calc(30*var(--u)) rgba(255,225,74,.55)}
+.share svg{width:56%;height:56%}
+.hpill{background:rgba(8,10,14,.85);padding:calc(8*var(--u)) calc(18*var(--u));border-radius:99px;font:700 calc(24*var(--u)) Mono,monospace;color:var(--acc)}
+.card{align-self:stretch;margin:0 calc(36*var(--u));background:rgba(8,10,14,.82);border:calc(1.5*var(--u)) solid;border-radius:calc(8*var(--u));padding:calc(8*var(--u)) calc(12*var(--u));display:flex;flex-direction:column;gap:calc(3*var(--u));font:700 calc(10.5*var(--u))/1.35 Mono,monospace;letter-spacing:.05em;text-transform:uppercase}
+.card b{font:900 calc(26*var(--u))/1.05 Inter;letter-spacing:-.03em;text-transform:none}
+.sticker{background:#f4f4f6;color:#111;padding:calc(5*var(--u)) calc(12*var(--u));border-radius:calc(4*var(--u));font:900 calc(15*var(--u)) Inter;letter-spacing:-.01em;text-transform:uppercase;box-shadow:0 calc(4*var(--u)) calc(14*var(--u)) rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center}
+.sticker small{font:700 calc(8*var(--u)) Mono,monospace;letter-spacing:.1em;opacity:.6}
+.kicker{align-self:inherit;font:700 calc(10*var(--u)) Mono,monospace;letter-spacing:.12em;text-transform:uppercase;border:calc(1.3*var(--u)) solid;padding:calc(2*var(--u)) calc(6*var(--u));border-radius:calc(3*var(--u));margin-bottom:calc(4*var(--u))}
+.title.small{font-size:calc(27*var(--u));letter-spacing:-.025em}
+.callout{position:absolute;background:rgba(10,10,12,.88);border:calc(1*var(--u)) solid rgba(255,255,255,.18);border-radius:calc(4*var(--u));padding:calc(4*var(--u)) calc(8*var(--u));display:flex;flex-direction:column;white-space:nowrap}
+.callout b{font:700 calc(10.5*var(--u)) Mono,monospace;letter-spacing:.08em;text-transform:uppercase;color:#fff}
+.callout small{font:500 calc(8*var(--u)) Mono,monospace;letter-spacing:.08em;text-transform:uppercase;color:#9a9aa6;margin-top:calc(1*var(--u))}
+#leg{position:absolute;left:calc(40*var(--u));top:calc(838*var(--u));font:500 calc(9*var(--u))/1.45 Mono,monospace;letter-spacing:.08em;text-transform:uppercase;opacity:.75;background:rgba(0,0,0,.35);padding:calc(5*var(--u)) calc(8*var(--u));border-radius:calc(4*var(--u))}
 #cap{position:absolute;left:calc(40*var(--u));right:calc(40*var(--u));top:calc(915*var(--u));display:flex;justify-content:center}
 #cap div{background:rgba(10,12,16,.78);border-radius:calc(10*var(--u));padding:calc(8*var(--u)) calc(14*var(--u));max-width:calc(560*var(--u));
   text-align:center;font:800 calc(27*var(--u))/1.18 Inter;letter-spacing:-.025em}
@@ -63,7 +80,10 @@ html,body{width:var(--W);height:var(--H);overflow:hidden;background:#000}
   <div id="ui">
     <div id="handle"></div>
     <div id="pill"><i></i><span></span></div>
+    <div id="fontes"></div>
     <div id="hdr"></div>
+    <div id="mid"></div>
+    <div id="leg"></div>
     <div id="cap"><div></div></div>
   </div>
 </div>

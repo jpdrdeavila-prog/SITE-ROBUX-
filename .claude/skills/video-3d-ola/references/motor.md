@@ -45,6 +45,7 @@ Com voz: `node scripts/sync.js videos/tema.js voz.mp3` cria `videos/tema.tempos.
 | `zoom` | câmera atravessa a cena velha (com clarão leve) | "a lição", revelação, mergulho num detalhe |
 | `pop` | objetos velhos encolhem e os novos saltam | dentro do mesmo capítulo, frase seguinte |
 | `flash` | clarão branco e corte | CTA final, virada forte |
+| `move` | só a câmera viaja até outro ponto do cenário (estilo B) | estilo palco único |
 | `none` | corte seco | evitar |
 
 **Objeto que atravessa cenas (`id`)**: dê o mesmo `id` a um objeto em duas cenas seguidas. Ele não sai com a transição:
@@ -128,6 +129,51 @@ adicionar em `engine/objects.js` e no `LIB`.
 - No máximo 2 cenas com o mesmo objeto-herói. Não repetir o mesmo herói em vídeos seguidos.
 - Sugestões: loteria = lotteryGlobe; investimento = faucetBucket; garantia = dome; obra/gasto público = scaffold, field;
   crime = cage, envelope, xMark; lançamento/marca = curtain, card{easel}; perda = cashCrumble; audiência = eyes.
+
+
+## ESTILO B: "Palco único" (ver references/estilos.md)
+Modelo completo: `videos/exemplo-palco.js`.
+```js
+export default {
+  acc: '#ffe14a',               // cor de destaque ÚNICA (tags, palavras *assim*, etiquetas, ponto da pílula)
+  bg: ['#0b0b0d', '#1f2026'],   // fundo padrão de todas as cenas
+  dust: '#ffe14a',              // poeira flutuante na cor de destaque
+  fontes: 'CGU · PODER360',     // linha "FONTES: ..." fixa abaixo da pílula (cena pode trocar com fontes:)
+  legenda: ['ALICERCE = DINHEIRO', 'PILARES = REGRAS'], // chave da metáfora no canto (cena: legenda:false some)
+  fx: { bloom: 0.45, aperture: 0.0035, maxblur: 0.009 }, // desfoque forte de "miniatura"
+  trans: 'move',                // padrão: só a câmera viaja entre os pontos do cenário
+  moveDur: 1.1,                 // duração da viagem de câmera
+  set: [ /* objetos FIXOS do cenário (montados 1 vez, ficam o vídeo todo) */
+    { id: 'mesa', make: L => L.desk({ open: t => (t - 15) / 0.8 }) },        // aqui t = segundos do VÍDEO
+    { id: 'livro', k: 'ledger', o: { hl: 2 }, x: -0.4, y: 0.78, anchorY: 0.5 },
+  ],
+  scenes: [
+    { from: 2, pill: 'O LIVRO',
+      cam: { tx: -0.35, ty: 0.8, tz: 0.05, d: 2.7, h: 1.5, yaw: -10 },     // tx/ty/tz = ponto que a câmera olha
+      hdr: [ { title: 'O que *entrou*', align: 'left', small: true, kicker: 'O LIVRO-CAIXA' },
+             { big: 'R$ 36 MIL', sub: 'FONTE · DATA', at: 1 },            // número gigante no meio-baixo
+             { sticker: 'BALANÇO INCOMPLETO', pos: 'mid', at: 2 } ],      // adesivo torto
+      callouts: [ { target: 'livro', off: [0.25, 0, 0], t: 'SAIU · R$ 93 MIL', s: 'DECLARADO AO TSE', dx: 40, dy: -110, at: 1 } ] },
+  ],
+};
+```
+- **callouts**: `target` = id de um objeto do `set` ou da cena (ou `[x,y,z]` no mundo); `off` desloca o ponto de encaixe;
+  `dx/dy` = posição da caixinha em relação ao ponto (px na tela de 720); `t` título, `s` subtítulo; `at/until` como sempre.
+  `anchorY` no objeto: 0 = base, 0,5 = meio, 1 = topo (padrão).
+- **Cabeçalhos novos**: `big` (número gigante no meio; aceita `count`), `sticker` (adesivo branco torto), `card` ({head, lines[]}
+  caixa com contorno da cor de destaque, boa para "linha do tempo de fatos"), `kicker` (etiqueta-moldura acima do `title`),
+  `align: 'left'`, `small: true` (título menor), `share: true` (ícone de enviar), `handlePill: true` (@ESTEREOLUDICO grande),
+  `pos: 'mid'` (manda qualquer item para o meio-baixo).
+- **Pode misturar**: um vídeo do estilo B pode ter `objs` por cena (objetos que entram e saem) além do `set` fixo.
+
+### Objetos de palco (engine/objects.js)
+`receipt{lines,hl,redacted}` papel/recibo com linhas tarjadas (hl = linha amarela) · `padlock{open(fn)}` cadeado ·
+`ledger{hl,blank}` livro-caixa aberto (blank = linha em branco destacada) · `calculator` · `register{txt}` caixa registradora/contador ·
+`cowBank` cofrinho de vaquinha · `ballotBox` urna · `desk{open(fn),drawerItem}` mesa com gaveta que abre ·
+`filingCabinet{n,open,k(fn)}` arquivo de aço (gaveta `open` abre com k) · `wallMap{w,h,routes,prog(fn)}` mapa de pontos na parede com rotas em arco que se desenham ·
+`lamp` luminária · `safe{open(fn),bars}` cofre oco que abre com barras de ouro · `goldBars{n}` ·
+`brickHouse{crack(fn),collapse(fn)}` casa de tijolos com pilares que racha e desaba (metáfora de estrutura) ·
+`person{sash,badge,glasses,capCol,suit,pose,walk}` manequim com acessório de função.
 
 ## Efeitos sonoros (automáticos)
 O motor gera a lista de eventos e o `render.js` monta a trilha sozinho (sons sintetizados, sem direitos autorais):

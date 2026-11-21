@@ -56,6 +56,10 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
 - Objetos sempre genéricos, sem logotipo real de marca. Nome de empresa pode aparecer como texto (ex.: "FERRARI" como rótulo).
 
 ## 5. Nível de acabamento (obrigatório, é o que deixa igual às referências)
+Existem 2 estilos (estudo completo em `references/estilos.md`): **A "mundo colorido"** (padrão) e **B "palco único"**
+(um cenário fixo `set`, câmera viajando `trans:'move'`, mundo neutro + 1 cor de destaque, etiquetas presas a objetos,
+fontes sempre na tela, número gigante no meio). Perguntar ao João qual usar, sugerindo pelo tema.
+Regras do estilo B: checklist no fim de `estilos.md`. Regras do estilo A:
 - **Mundo contínuo**: toda troca de capítulo com transição (`pan`, `up`, `zoom`); `pop` só dentro do mesmo capítulo; `flash` no CTA.
 - **Pelo menos 2 objetos que atravessam cenas** com `id` (o dinheiro que vira casa, o logo antigo que vira o novo...).
 - **Câmera viva**: no mínimo 3 cenas com `cam2` (travelling), `orbit` ou ângulo lateral/de cima. Nunca 3 cenas seguidas com a mesma câmera.
@@ -95,5 +99,7 @@ Rodar: `node -v && ffmpeg -version | head -1 && node -e "require('playwright')" 
 - `references/roteiro.md`: fórmula de roteiro (análise dos vídeos de referência), legenda do post, regras de números.
 - `references/motor.md`: formato do arquivo de vídeo, cabeçalhos, câmera e lista de objetos 3D.
 - `engine/`: motor 3D (Three.js + HTML). `scripts/`: shot.js (prévia), sync.js (voz), render.js (MP4).
-- `videos/exemplo.js`: vídeo-modelo de 32 s com todas as transições, morph, câmera viajando, partículas e sons.
+- `videos/exemplo.js`: modelo do estilo A (transições, morph, câmera, partículas, sons).
+- `videos/exemplo-palco.js`: modelo do estilo B (cenário fixo, câmera viajando, etiquetas, número no meio, compartilhar).
+- `references/estilos.md`: os 2 estilos desmontados quadro a quadro (material de estudo).
 - `scripts/sfx.js`: efeitos sonoros sintetizados (usado pelo render.js).

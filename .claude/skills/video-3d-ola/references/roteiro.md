@@ -55,3 +55,13 @@ Referências analisadas (só como modelo de estrutura, NUNCA copiar texto ou mar
 6. "Quer aprender a fazer vídeos assim? Comenta ESTÉREO."
 Sem hashtags no meio do texto. Fontes com links num comentário separado (veículo, título, data, link).
 Horário sugerido: 18h (pico do público entre 18h e 21h).
+
+## Padrões extras (estilo B "palco único", ver estilos.md)
+- **Gancho pergunta + resposta-choque**: "Quanto custou X? A resposta oficial, numa palavra: ..." (escrever novo).
+- **Metáfora-sistema**: escolha 1 metáfora para o vídeo todo e mostre a chave na `legenda` (ex.: "COFRE = RESERVAS").
+- **Capítulos-pergunta**: O TOTAL, QUEM PAGA, O QUE SE ESCONDE, ATÉ QUANDO, O PRAZO, OS OUTROS (criar os seus).
+- **"Traduzindo:"** depois de termo técnico + adesivo com a tradução.
+- **"E aqui a história vira."** na metade.
+- **"Não é só X"**: mostrar que outros lados fazem o mesmo (neutralidade).
+- **Veredito curto** no fim (2 linhas, como um laudo).
+- **CTA de compartilhar** alternativo: "Manda pra quem precisa ver isso." + `share` + `handlePill`, e depois "Comenta ESTÉREO".

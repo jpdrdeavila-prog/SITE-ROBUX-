@@ -511,7 +511,145 @@ export function lineChart({ vals = [0.2, 0.35, 0.3, 0.6, 0.9], col = CASH, g: gr
   return G;
 }
 
+// ---------- PALCO (estilo B): objetos de cenário realista-estilizado ----------
+const ACC = () => PAL.acc || '#ffe14a';
+const WOOD = '#b07a46', STEEL = '#8a8f99', PAPER = '#f2f0ea', INK = '#2a2a30';
+// papel/recibo com linhas tarjadas (sigilo); hl = índice da linha destacada na cor de destaque
+export function receipt({ lines = 9, hl = -1, w = 0.42, h = 0.9, redacted = true } = {}) {
+  const g = group(box(w, 0.012, h, PAPER, { rd: 0.004 }));
+  for (let i = 0; i < lines; i++) { const z = -h / 2 + 0.1 + i * ((h - 0.16) / lines);
+    g.add(box(w * (redacted ? 0.8 : 0.55 + (i % 3) * 0.1), 0.006, 0.045, i === hl ? ACC() : (redacted ? INK : '#9aa0b0'), { y: 0.012, z, rd: 0.002, glow: i === hl ? 0.6 : 0 })); }
+  [-1, 1].forEach(sx => { for (let i = 0; i < 9; i++) g.add(cyl(0.008, 0.004, '#cfcfd6', { x: sx * (w / 2 - 0.025), y: 0.012, z: -h / 2 + 0.06 + i * (h - 0.12) / 8, seg: 8 })); });
+  return g;
+}
+export function padlock({ col, open = 0 } = {}) {
+  const c = col || ACC(), m = mat(c, { glow: 0.35, r: 0.3 });
+  const shackle = mesh(new THREE.TorusGeometry(0.07, 0.016, 8, 24, Math.PI), mat('#c9ccd6', { r: 0.25 }));
+  shackle.position.y = 0.16;
+  const g = group(box(0.2, 0.16, 0.09, null, { m, rd: 0.025 }), shackle, cyl(0.016, 0.03, '#333', { y: 0.06, z: 0.04 }));
+  g.children[2].rotation.x = Math.PI / 2; g.children[2].position.set(0, 0.07, 0.046);
+  g.userData.tick = (lt) => { const o = clamp01(val(open, lt)); shackle.position.y = 0.16 + o * 0.06; shackle.rotation.y = o * 1.2; };
+  return g;
+}
+const clamp01 = x => Math.min(1, Math.max(0, x));
+// livro-caixa aberto: linhas escritas; hl = linha destacada; blank = linha em branco (vazia)
+export function ledger({ hl = -1, blank = -1, w = 1.0, d = 0.66 } = {}) {
+  const g = group(box(w, 0.03, d, '#3a2f2a', { rd: 0.01 }));
+  [-1, 1].forEach(sx => {
+    const pg = box(w / 2 - 0.03, 0.025, d - 0.05, PAPER, { x: sx * (w / 4), y: 0.03, rd: 0.006 }); pg.rotation.z = sx * -0.04; g.add(pg);
+    for (let i = 0; i < 9; i++) { if (sx > 0 && i === blank) continue;
+      const on = sx > 0 && i === hl; g.add(box((w / 2 - 0.12) * (0.6 + 0.4 * Math.abs(Math.sin(i * 3.3 + sx))), 0.004, 0.018, on ? ACC() : '#8d8f9a', { x: sx * (w / 4) - 0.02, y: 0.058, z: -d / 2 + 0.07 + i * 0.058, rd: 0.002, glow: on ? 0.6 : 0 })); }
+  });
+  if (blank >= 0) g.add(box(w / 2 - 0.12, 0.006, 0.04, ACC(), { x: w / 4 - 0.02, y: 0.058, z: -d / 2 + 0.07 + blank * 0.058, rd: 0.004, glow: 0.7 }));
+  return g;
+}
+export function calculator({ col = '#2a2a33', screen } = {}) {
+  const g = group(box(0.5, 0.06, 0.62, col, { rd: 0.04 }), box(0.4, 0.012, 0.12, screen || ACC(), { y: 0.06, z: -0.2, rd: 0.01, glow: 0.6 }));
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) g.add(box(0.075, 0.025, 0.07, r === 3 && c === 3 ? ACC() : '#f1f1f4', { x: -0.14 + c * 0.093, y: 0.06, z: -0.02 + r * 0.09, rd: 0.012, glow: r === 3 && c === 3 ? 0.4 : 0 }));
+  return g;
+}
+export function register({ txt = '' } = {}) { // caixa registradora / contador de doações
+  const g = group(box(0.8, 0.32, 0.5, '#3a3a44', { rd: 0.04 }), box(0.66, 0.2, 0.06, '#1d1d25', { y: 0.33, z: -0.1, rd: 0.02 }), box(0.56, 0.12, 0.012, ACC(), { y: 0.37, z: -0.065, rd: 0.01, glow: 0.7 }));
+  if (txt) { const t = text({ txt, h: 0.09, col: '#111' }); t.position.set(0, 0.38, -0.055); g.add(t); }
+  return g;
+}
+export function cowBank({ col = '#f4f4f6', spots = '#1d1d25' } = {}) { // cofrinho de vaquinha
+  const m = mat(col, { r: 0.4 }), k = mat(spots);
+  const body = sph(0.3, null, { m, y: 0.38 }); body.scale.set(1.3, 0.95, 0.9);
+  const g = group(body, sph(0.17, null, { m, x: 0.4, y: 0.48 }), sph(0.1, '#f3a6b8', { x: 0.54, y: 0.42 }));
+  [[-0.1, 0.55, 0.2, 0.12], [0.15, 0.45, -0.22, 0.1], [-0.25, 0.35, -0.15, 0.09], [0.05, 0.3, 0.25, 0.08]].forEach(([x, y, z, r]) => { const sp = sph(r, null, { m: k, x, y, z }); sp.scale.set(1, 0.8, 0.35); g.add(sp); });
+  [[-.2, .15], [.2, .15], [-.2, -.15], [.2, -.15]].forEach(([x, z]) => g.add(cyl(0.05, 0.16, null, { m, x, z })));
+  [-1, 1].forEach(s => { const h = cap(0.02, 0.06, '#f1e3c0'); h.position.set(0.42, 0.66, s * 0.07); h.rotation.z = -0.5; g.add(h); });
+  g.add(box(0.12, 0.015, 0.03, '#333', { y: 0.66, rd: 0.004 }));
+  return g;
+}
+export function ballotBox({ col = '#f4f4f6' } = {}) { // urna eletrônica (genérica)
+  const g = group(box(0.7, 0.2, 0.46, col, { rd: 0.04 }), box(0.3, 0.012, 0.22, '#1d1d25', { x: -0.14, y: 0.2, rd: 0.01 }));
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) g.add(box(0.045, 0.015, 0.035, '#2a2a33', { x: 0.13 + c * 0.06, y: 0.2, z: -0.09 + r * 0.055, rd: 0.006 }));
+  g.add(box(0.06, 0.016, 0.035, '#2f9e5a', { x: 0.25, y: 0.2, z: 0.14, rd: 0.006 }));
+  return g;
+}
+// mesa de escritório com gaveta que abre (open: 0..1, pode ser função)
+export function desk({ w = 1.8, d = 0.85, h = 0.78, col = WOOD, open = 0, drawerItem = null } = {}) {
+  const m = mat(col, { r: 0.55 }), g = group(box(w, 0.06, d, null, { m, y: h - 0.06, rd: 0.02 }));
+  g.add(box(0.5, h - 0.06, d - 0.04, null, { m, x: w / 2 - 0.27, rd: 0.02 }), box(0.06, h - 0.06, d - 0.06, null, { m, x: -w / 2 + 0.05, rd: 0.01 }));
+  const dr = new THREE.Group(); dr.position.set(w / 2 - 0.27, h - 0.22, 0); g.add(dr);
+  dr.add(box(0.44, 0.13, d - 0.1, '#9a6a3c', { y: -0.06, rd: 0.012 }), box(0.46, 0.15, 0.03, null, { m, y: -0.075, z: d / 2 - 0.03, rd: 0.012 }), box(0.12, 0.02, 0.02, '#d9d9e0', { y: 0.0, z: d / 2 - 0.005, rd: 0.006 }));
+  if (drawerItem) { drawerItem.position.set(0, 0.0, 0); dr.add(drawerItem); }
+  for (let i = 1; i < 3; i++) g.add(box(0.46, 0.15, 0.03, null, { m, x: w / 2 - 0.27, y: h - 0.22 - i * 0.2 - 0.075, z: d / 2 - 0.03, rd: 0.012 }), box(0.12, 0.02, 0.02, '#d9d9e0', { x: w / 2 - 0.27, y: h - 0.22 - i * 0.2, z: d / 2 - 0.01, rd: 0.006 }));
+  g.userData.tick = (lt) => { dr.position.z = clamp01(val(open, lt)) * (d * 0.55); };
+  return g;
+}
+export function filingCabinet({ n = 4, col = STEEL, open = -1, k = 0 } = {}) { // arquivo de aço; open = índice da gaveta aberta
+  const m = mat(col, { r: 0.35 }), g = group(box(0.62, n * 0.3 + 0.04, 0.6, null, { m, rd: 0.015 })); const drs = [];
+  for (let i = 0; i < n; i++) { const d = new THREE.Group(); d.position.set(0, 0.04 + i * 0.3 + 0.13, 0.3); g.add(d); drs.push(d);
+    d.add(box(0.56, 0.26, 0.03, '#a4a9b3', { y: -0.13, rd: 0.01 }), box(0.16, 0.025, 0.03, '#d9d9e0', { y: 0.03, z: 0.02, rd: 0.008 }), box(0.12, 0.05, 0.01, '#f4f4f6', { y: -0.05, z: 0.017, rd: 0.004 })); }
+  g.userData.tick = (lt) => drs.forEach((d, i) => { d.position.z = 0.3 + (i === open ? clamp01(val(k, lt)) * 0.35 : 0); });
+  return g;
+}
+// painel de mapa na parede: grade de pontos + rotas em arco ([[x1,y1,x2,y2],...] em -1..1) que se desenham (prog 0..1)
+export function wallMap({ w = 3.2, h = 1.7, routes = [], prog = 1, col = '#2a2c33' } = {}) {
+  const g = group(box(w + 0.12, h + 0.12, 0.05, '#1a1b20', { rd: 0.02, base: false }), box(w, h, 0.02, col, { z: 0.03, rd: 0.01, base: false }));
+  const dm = mat('#6b6f7a', { glow: 0.15 }), dg = new THREE.SphereGeometry(0.012, 6, 4);
+  const blobs = [[-0.55, 0.25, 0.28, 0.32], [-0.35, -0.35, 0.16, 0.3], [0.05, 0.35, 0.18, 0.22], [0.1, -0.15, 0.17, 0.32], [0.5, 0.3, 0.38, 0.28], [0.75, -0.45, 0.14, 0.12]];
+  for (let x = -0.95; x <= 0.95; x += 0.045) for (let y = -0.9; y <= 0.9; y += 0.08) {
+    if (!blobs.some(([cx, cy, rx, ry]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1)) continue;
+    const d = new THREE.Mesh(dg, dm); d.position.set(x * w / 2, y * h / 2, 0.045); g.add(d); }
+  const am = mat(ACC(), { glow: 0.8 }), arcs = routes.map(([x1, y1, x2, y2]) => {
+    const pts = []; for (let i = 0; i <= 24; i++) { const t = i / 24; pts.push(new THREE.Vector3((x1 + (x2 - x1) * t) * w / 2, ((y1 + (y2 - y1) * t) + Math.sin(t * Math.PI) * 0.35) * h / 2, 0.05)); }
+    const ms = pts.map(p => { const s_ = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 4), am); s_.position.copy(p); g.add(s_); return s_; }); return ms; });
+  g.userData.tick = (lt) => { const k = clamp01(val(prog, lt)); arcs.forEach(ms => ms.forEach((m_, i) => (m_.visible = i / ms.length <= k))); };
+  return g;
+}
+export function lamp({ col = '#1d1d25' } = {}) { // luminária de mesa
+  const m = mat(col, { r: 0.3 }), arm1 = box(0.03, 0.42, 0.03, null, { m, base: false }), arm2 = box(0.03, 0.34, 0.03, null, { m, base: false });
+  arm1.position.set(0.02, 0.22, 0); arm1.rotation.z = -0.25; arm2.position.set(0.18, 0.45, 0); arm2.rotation.z = 1.1;
+  const shade = mesh(new THREE.ConeGeometry(0.13, 0.17, 24, 1, true), mat(col, { side: THREE.DoubleSide, r: 0.3 })); shade.position.set(0.33, 0.4, 0); shade.rotation.z = 0.6;
+  const bulb = sph(0.04, '#fff6cc', { x: 0.36, y: 0.36, glow: 1.2 });
+  return group(cyl(0.11, 0.025, null, { m }), arm1, arm2, shade, bulb);
+}
+export function safe({ open = 0, bars = 6, col = '#55585f' } = {}) { // cofre oco que abre e mostra barras de ouro
+  const m = mat(col, { r: 0.4 }), inner = mat('#26272c', { r: 0.9 }), W = 0.9, H = 1.0, D = 0.7, T = 0.06;
+  const g = group(box(W, T, D, null, { m, rd: 0.02 }), box(W, T, D, null, { m, y: H - T, rd: 0.02 }),
+    box(T, H, D, null, { m, x: -W / 2 + T / 2, rd: 0.02 }), box(T, H, D, null, { m, x: W / 2 - T / 2, rd: 0.02 }),
+    box(W - 2 * T, H - 2 * T, T, null, { m: inner, y: T, z: -D / 2 + T / 2, rd: 0 }), box(W - 2 * T, 0.03, D - T, '#3a3c42', { y: 0.47, z: T / 2, rd: 0 }));
+  for (let i = 0; i < bars; i++) g.add(box(0.2, 0.08, 0.14, ACC(), { x: -0.24 + (i % 3) * 0.24, y: i < 3 ? T : 0.5, z: 0.02, rd: 0.015, glow: 0.7 }));
+  const door = new THREE.Group(); door.position.set(-W / 2, 0, D / 2 + 0.04); g.add(door);
+  door.add(box(W, H, 0.07, null, { m, x: W / 2, rd: 0.02 }));
+  const wheel = mesh(new THREE.TorusGeometry(0.11, 0.022, 8, 24), mat(ACC(), { glow: 0.5 })); wheel.position.set(W / 2, H / 2, 0.05); door.add(wheel);
+  for (let i = 0; i < 3; i++) { const sp = box(0.2, 0.02, 0.02, ACC(), { base: false, glow: 0.4 }); sp.position.set(W / 2, H / 2, 0.05); sp.rotation.z = i * Math.PI / 3; door.add(sp); }
+  g.userData.tick = (lt) => { door.rotation.y = -clamp01(val(open, lt)) * 1.9; wheel.rotation.z = lt * 0.6; };
+  return g;
+}
+export function goldBars({ n = 3, col } = {}) { const g = new THREE.Group(); for (let i = 0; i < n; i++) g.add(box(0.36, 0.14, 0.2, col || ACC(), { x: (i - (n - 1) / 2) * 0.4, rd: 0.02, glow: 0.7 })); return g; }
+// casa de tijolos com pilares (metáfora de "estrutura"): crack 0..1 (rachadura), collapse 0..1 (desaba)
+export function brickHouse({ col = '#e9e4da', roof = '#d8d2c6', crack = 0, collapse = 0, w = 1.3, h = 0.95 } = {}) {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const mb = mat(col, { r: 0.8 }), mr = mat('#c9c2b4');
+  body.add(box(w, h, 0.8, null, { m: mb, rd: 0.02 }));
+  for (let r = 0; r < 9; r++) for (let c = 0; c < 6; c++) if ((r + c) % 2) body.add(box(w / 6 - 0.02, h / 9 - 0.02, 0.01, null, { m: mr, x: -w / 2 + (c + 0.5) * w / 6 + (r % 2 ? 0.05 : 0), y: (r + 0.5) * h / 9, z: 0.405, rd: 0 }));
+  [-0.45, -0.15, 0.15, 0.45].forEach(x => body.add(box(0.08, h * 0.9, 0.08, '#f8f6f0', { x: x * w, z: 0.44, rd: 0.02 })));
+  const rf = mesh(new THREE.CylinderGeometry(0.01, w * 0.78, 0.55, 4, 1), mat(roof)); rf.rotation.y = Math.PI / 4; rf.scale.z = 0.7; rf.position.y = h + 0.27; rf.castShadow = true; body.add(rf);
+  body.add(box(0.22, 0.32, 0.03, '#3a3a44', { y: 0, z: 0.42, rd: 0.01 }), box(0.26, 0.2, 0.03, '#3a3a44', { x: 0.35 * w, y: h * 0.55, z: 0.42, rd: 0.01 }), box(0.12, 0.3, 0.12, col, { x: -0.3 * w, y: h + 0.25, rd: 0.01 }));
+  const cr = new THREE.Group(); body.add(cr); const cm = mat(ACC(), { glow: 1.0 });
+  for (let i = 0; i < 8; i++) { const sgm = box(0.025, h / 8 + 0.02, 0.012, null, { m: cm, base: false }); sgm.position.set(0.05 + (i % 2 ? 0.05 : -0.04), (i + 0.5) * h / 8, 0.415); sgm.rotation.z = i % 2 ? 0.5 : -0.5; cr.add(sgm); }
+  g.userData.tick = (lt) => { const c_ = clamp01(val(crack, lt)); cr.children.forEach((sg, i) => (sg.visible = i / 8 < c_));
+    const k = clamp01(val(collapse, lt)); body.rotation.z = -k * 0.35; body.position.y = -k * 0.15; body.scale.y = 1 - k * 0.55; body.rotation.x = k * 0.12; };
+  return g;
+}
+// boneco com acessórios: sash (faixa verde-amarela), badge (crachá), glasses, capCol (boné), suit (terno escuro)
+export function person({ col = '#e9e9ee', pose = 'parado', walk = false, sash = false, badge = false, glasses = false, capCol = null, suit = null, glow = 0 } = {}) {
+  const g = man({ col: suit || col, pose, walk, glow });
+  if (suit) { g.add(sph(0.119, col, { y: 1.66 })); g.add(box(0.1, 0.26, 0.02, '#f4f4f6', { y: 1.28, z: 0.125, rd: 0.01 }), box(0.03, 0.2, 0.025, '#b8342e', { y: 1.3, z: 0.135, rd: 0.008 })); }
+  if (sash) { const s1 = box(0.07, 0.62, 0.02, '#2f9e5a', { base: false }); s1.position.set(0, 1.25, 0.14); s1.rotation.z = 0.6; const s2 = box(0.025, 0.62, 0.022, '#ffd24a', { base: false }); s2.position.set(0.01, 1.25, 0.15); s2.rotation.z = 0.6; g.add(s1, s2); }
+  if (badge) g.add(box(0.07, 0.1, 0.01, '#f4f4f6', { x: 0.07, y: 1.24, z: 0.135, rd: 0.01 }), box(0.004, 0.12, 0.004, '#333', { x: 0.07, y: 1.33, z: 0.13 }));
+  if (glasses) [-1, 1].forEach(sx => { const r = mesh(new THREE.TorusGeometry(0.035, 0.008, 6, 16), mat('#111')); r.position.set(sx * 0.045, 1.67, 0.105); g.add(r); });
+  if (capCol) { g.add(sph(0.12, capCol, { y: 1.7 })); g.children.at(-1).scale.y = 0.6; g.add(box(0.15, 0.012, 0.12, capCol, { y: 1.72, z: 0.1, rd: 0.005 })); }
+  return g;
+}
+
 export const LIB = {
+  receipt, padlock, ledger, calculator, register, cowBank, ballotBox, desk, filingCabinet, wallMap, lamp, safe, goldBars, brickHouse, person,
   rain, coinRain, billRain, confetti, sparkles, f1car, boat, water, truck, storeFront, logoCard, trophy, podium, magnifier,
   laptop, suitcase, bed, plane, bigCoin, gavel, lineChart,
   cashBlock, cashCrumble, coinStack, bill, piggy, card, questionBox, ticket, sign, man, crowd, eyes, house, field, tower, skyline,

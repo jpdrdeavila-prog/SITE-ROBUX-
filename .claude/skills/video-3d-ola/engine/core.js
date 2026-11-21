@@ -82,7 +82,7 @@ const eBack = x => { x = clamp(x); const c = 1.6; return 1 + (c + 1) * Math.pow(
 const lerp = (a, b, k) => a + (b - a) * k;
 const mix = (a, b, k) => new THREE.Color(a).lerp(new THREE.Color(b), k);
 const hex = c => '#' + c.getHexString();
-const DEFBG = ['#0a0a0c', '#24242c'];
+const DEFBG = V.bg || ['#0a0a0c', '#24242c'];
 function palFrom(bg) {
   const top = new THREE.Color(bg[0]), bot = new THREE.Color(bg[1]);
   const L = bot.getHSL({}).l, light = L > 0.6;
@@ -99,7 +99,7 @@ function paintSky(top, bot) {
 }
 
 // ---------- câmera ----------
-const CAMDEF = { d: 6.5, h: 0.9, ty: 0.55, tx: 0, yaw: 0, push: 0.07, orbit: 0, fov: 30, shake: 0 };
+const CAMDEF = { d: 6.5, h: 0.9, ty: 0.55, tx: 0, tz: 0, yaw: 0, push: 0.07, orbit: 0, fov: 30, shake: 0 };
 function camAt(sc, lt) {
   const dur = sc.T1 - sc.T0, a = Object.assign({}, CAMDEF, V.cam || {}, sc.cam || {});
   let c = a;
@@ -113,8 +113,8 @@ function camAt(sc, lt) {
 function placeCam(c, T) {
   const yaw = c.yaw * Math.PI / 180, sh = c.shake ? Math.sin(T * 37) * c.shake * 0.02 : 0;
   cam.fov = c.fov; cam.updateProjectionMatrix();
-  cam.position.set(c.tx + Math.sin(yaw) * c.d + sh, c.ty + c.h + sh * 0.6, Math.cos(yaw) * c.d);
-  cam.lookAt(c.tx, c.ty, 0);
+  cam.position.set(c.tx + Math.sin(yaw) * c.d + sh, c.ty + c.h + sh * 0.6, c.tz + Math.cos(yaw) * c.d);
+  cam.lookAt(c.tx, c.ty, c.tz);
   return Math.hypot(c.d, c.h);
 }
 
@@ -129,7 +129,7 @@ function fxObjs(sc) { // atalhos de partículas: fx: ['rain','coins','bills','co
 }
 function makeScene(i) {
   const sc = SC_[i];
-  Object.assign(PAL, palFrom(sc.bg || DEFBG), { acc: sc.acc || '#7dffb0' });
+  Object.assign(PAL, palFrom(sc.bg || DEFBG), { acc: sc.acc || V.acc || '#7dffb0' });
   const root = new THREE.Group(), pers = new THREE.Group(); S.add(root, pers);
   const items = [...(sc.objs || []), ...fxObjs(sc)].map(e => {
     const holder = new THREE.Group(), o = makeObj(e); holder.add(o); root.add(holder);
@@ -139,6 +139,16 @@ function makeScene(i) {
 }
 function dropScene(s) { if (!s) return; S.remove(s.root, s.pers); dispose(s.root); dispose(s.pers); }
 let cur = null, prev = null;
+// PALCO: objetos de V.set ficam montados o vídeo inteiro (a câmera passeia entre eles)
+const SET = [];
+if (V.set) { Object.assign(PAL, palFrom(V.bg || DEFBG), { acc: V.acc || '#7dffb0' });
+  V.set.forEach(e => { const holder = new THREE.Group(), o = makeObj(e); holder.add(o); S.add(holder);
+    holder.position.set(e.x || 0, e.y || 0, e.z || 0); holder.rotation.y = (e.yaw || 0) * Math.PI / 180; holder.scale.setScalar(e.s ?? 1);
+    SET.push({ e, o, holder }); }); }
+function tickSet(t) { SET.forEach(it => { const e = it.e; let x = e.x || 0, y = e.y || 0, z = e.z || 0, yaw = e.yaw || 0, s = e.s ?? 1;
+  if (e.upd) { const u = e.upd(t, t) || {}; x += u.x || 0; y += u.y || 0; z += u.z || 0; yaw += u.yaw || 0; s *= u.s ?? 1; }
+  it.holder.position.set(x, y, z); it.holder.rotation.y = yaw * Math.PI / 180; it.holder.scale.setScalar(s);
+  it.o.traverse(n => n.userData.tick?.(t, t)); }); }
 function ensure(i) {
   if (cur && cur.i === i) return;
   if (cur && cur.i === i - 1) { dropScene(prev); prev = cur; }
@@ -184,22 +194,32 @@ const $ = id => document.getElementById(id);
 $('handle').textContent = `${V.handle} · ${V.tema}`;
 const fmt = (n, d = 0) => n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const star = (s, col) => String(s).replace(/\*(.+?)\*/g, `<span style="color:${col}">$1</span>`);
-function hdrHTML(sc, lt) {
-  const acc = sc.acc || '#7dffb0';
+const posOf = h => h.pos || (h.big || h.share || h.handlePill ? 'mid' : 'top');
+function hdrHTML(sc, lt, pos = 'top') {
+  const acc = sc.acc || V.acc || '#7dffb0';
   return (sc.hdr || []).map(h => {
+    if (posOf(h) !== pos) return '';
     const a = loc(sc, h, 'at', 't0', 0), b = h.until != null || h.t1 != null ? loc(sc, h, 'until', 't1', 1e9) : 1e9;
     if (lt < a || lt >= b) return '';
     const k = eBack((lt - a) / 0.35), op = clamp((lt - a) / 0.2) * clamp((b - lt) / 0.15);
-    const st = `opacity:${op};transform:scale(${0.85 + 0.15 * k})${h.stamp ? ` rotate(${h.rot ?? -6}deg)` : ''}`;
+    const st = `opacity:${op};transform:scale(${0.85 + 0.15 * k})${h.stamp || h.sticker ? ` rotate(${h.rot ?? (h.sticker ? -4 : -6)}deg)` : ''}${h.align === 'left' ? ';align-self:flex-start;align-items:flex-start;margin-left:calc(40*var(--u))' : ''}`;
     let inner = '';
-    if (h.num || h.count) {
+    if (h.big) {
+      let n = h.big; if (h.count) { const c = h.count, p = eOut((lt - a) / (c.dur || 1.4)); n = (c.pre || '') + fmt(c.from + (c.to - c.from) * p, c.dec || 0) + (c.suf || ''); }
+      inner = `<div class="big" style="color:${h.col || acc}">${n}</div>${h.sub ? `<div class="bigsub">${h.sub}</div>` : ''}`;
+    } else if (h.num || h.count) {
       let n = h.num;
       if (h.count) { const c = h.count, p = eOut((lt - a) / (c.dur || 1.4)); n = (c.pre || '') + fmt(c.from + (c.to - c.from) * p, c.dec || 0) + (c.suf || ''); }
       const strike = h.strike && lt >= a + (h.strike === true ? 0.6 : h.strike);
       inner = `<div class="num"><b style="color:${h.col || '#fff'};${strike ? 'text-decoration:line-through;text-decoration-color:#ff5a5f;text-decoration-thickness:.12em' : ''}">${star(n, acc)}</b>${h.sub ? `<small>${h.sub}</small>` : ''}</div>`;
-    } else if (h.title) {
+    } else if (h.share) inner = `<div class="share" style="background:${acc}"><svg viewBox="0 0 24 24"><path d="M3 11 21 3l-6 18-3-8z" fill="#111"/></svg></div>`;
+    else if (h.handlePill) inner = `<div class="hpill">${V.handle}</div>`;
+    else if (h.card) { const c = h.card;
+      inner = `<div class="card" style="border-color:${acc}">${c.head ? `<b style="color:${acc}">${star(c.head, acc)}</b>` : ''}${(c.lines || []).map(l => `<div>${star(l, acc)}</div>`).join('')}</div>`; }
+    else if (h.sticker) inner = `<div class="sticker">${star(h.sticker, '#b8860b')}${h.sub ? `<small>${h.sub}</small>` : ''}</div>`;
+    else if (h.title) {
       const strike = h.strike && lt >= a + (h.strike === true ? 0.6 : h.strike);
-      inner = `<div class="title ${h.box ? 'box' : ''}" style="color:${h.col || '#fff'};${strike ? 'text-decoration:line-through;text-decoration-color:#ff5a5f;text-decoration-thickness:.1em' : ''}">${star(h.title, h.hl || acc)}</div>${h.sub ? `<div class="sub">${h.sub}</div>` : ''}`;
+      inner = `${h.kicker ? `<div class="kicker" style="color:${acc};border-color:${acc}">${h.kicker}</div>` : ''}<div class="title ${h.box ? 'box' : ''} ${h.small ? 'small' : ''}" style="color:${h.col || '#fff'};${h.align === 'left' ? 'text-align:left;' : ''}${strike ? 'text-decoration:line-through;text-decoration-color:#ff5a5f;text-decoration-thickness:.1em' : ''}">${star(h.title, h.hl || acc)}</div>${h.sub ? `<div class="sub">${h.sub}</div>` : ''}`;
     }
     else if (h.tag) inner = `<div class="tag" style="background:${h.tagc || acc};color:${h.tagf || '#08130d'}">${h.tag}</div>`;
     else if (h.chips) inner = `<div class="chips">${h.chips.map(([t, c, at]) => {
@@ -229,7 +249,7 @@ function dots(t, light, flash) {
     const x = (sx + Math.sin(t * 0.25 + i) * 0.02) * fx.width, y = ((sy - t * sp) % 1 + 1) % 1 * fx.height;
     const r = (1.2 + 2.6 * Math.abs(Math.sin(i * 5.7))) * SC;
     fg.globalAlpha = 0.25 + 0.45 * Math.abs(Math.sin(i * 2.2 + t * 0.6));
-    fg.fillStyle = light ? '#9aa3b5' : '#ffffff'; fg.beginPath(); fg.arc(x, y, r, 0, 7); fg.fill();
+    fg.fillStyle = V.dust || (light ? '#9aa3b5' : '#ffffff'); fg.beginPath(); fg.arc(x, y, r, 0, 7); fg.fill();
   }
   if (flash > 0) { fg.globalAlpha = flash; fg.fillStyle = '#fff'; fg.fillRect(0, 0, fx.width, fx.height); }
   // grão de filme sutil (determinístico)
@@ -239,6 +259,31 @@ function dots(t, light, flash) {
   fg.globalAlpha = 1;
 }
 const v3 = new THREE.Vector3(), bb = new THREE.Box3();
+function anchorOf(target) {
+  if (Array.isArray(target)) return new THREE.Vector3(...target);
+  const it = cur.items.find(q => q.e.id === target) || SET.find(q => q.e.id === target);
+  if (!it || !it.holder.visible) return null;
+  bb.setFromObject(it.holder); if (bb.isEmpty()) return null;
+  const ay = it.e.anchorY ?? 1;
+  return new THREE.Vector3((bb.min.x + bb.max.x) / 2, bb.min.y + (bb.max.y - bb.min.y) * ay, (bb.min.z + bb.max.z) / 2);
+}
+function callouts(sc, lt) {
+  const acc = sc.acc || V.acc || '#7dffb0', svg = [], box = [], U = SC;
+  (sc.callouts || []).forEach(c => {
+    const a = loc(sc, c, 'at', 't0', 0), b = c.until != null || c.t1 != null ? loc(sc, c, 'until', 't1', 1e9) : 1e9;
+    if (lt < a || lt >= b) return;
+    const pr = anchorOf(c.target); if (!pr) return;
+    if (c.off) pr.add(new THREE.Vector3(...c.off));
+    pr.project(cam); if (pr.z > 1) return;
+    const ax = (pr.x * 0.5 + 0.5) * W * U, ay = (-pr.y * 0.5 + 0.5) * H * U;
+    const bx = ax + (c.dx ?? 80) * U, by = ay + (c.dy ?? -90) * U;
+    const k = clamp((lt - a) / 0.35), op = clamp((lt - a) / 0.2) * clamp((b - lt) / 0.15);
+    const ex = ax + (bx - ax) * k, ey = ay + (by - ay) * k;
+    svg.push(`<line x1="${ax}" y1="${ay}" x2="${ex}" y2="${ey}" stroke="${acc}" stroke-width="${1.6 * U}" opacity="${op}"/><circle cx="${ax}" cy="${ay}" r="${3.2 * U}" fill="${acc}" opacity="${op}"/>`);
+    box.push(`<div class="callout" style="left:${bx}px;top:${by}px;opacity:${op * k};transform:translate(${(c.dx ?? 80) < 0 ? '-100%' : '0'},-50%)"><b>${c.t}</b>${c.s ? `<small>${c.s}</small>` : ''}</div>`);
+  });
+  return `<svg width="${W * U}" height="${H * U}" style="position:absolute;inset:0">${svg.join('')}</svg>` + box.join('');
+}
 function labels(scn) {
   const out = [];
   scn.items.forEach(it => {
@@ -247,10 +292,11 @@ function labels(scn) {
     v3.set((bb.min.x + bb.max.x) / 2, bb.max.y + 0.12, (bb.min.z + bb.max.z) / 2).project(cam);
     out.push(`<div style="left:${(v3.x * 0.5 + 0.5) * W * SC}px;top:${(-v3.y * 0.5 + 0.5) * H * SC}px;color:${it.e.labelCol || '#fff'}">${it.e.label}</div>`);
   });
-  $('lbl').innerHTML = out.join('');
+  $('lbl').innerHTML = callouts(scn.sc, lastLt) + out.join('');
 }
 
 // ---------- render ----------
+let lastLt = 0;
 function sceneAt(t) { let i = 0; SC_.forEach((s, k) => { if (t >= s.T0) i = k; }); return i; }
 const OFF = { pan: [3.4, 0, 0], up: [0, -3.2, 0], left: [-3.4, 0, 0] };
 function renderAt(t) {
@@ -262,8 +308,10 @@ function renderAt(t) {
   const top = hex(mix(bgp[0], bg0[0], kc)), bot = hex(mix(bgp[1], bg0[1], kc));
   paintSky(top, bot); floorM.color.set(mix(Pp.floor, P.floor, kc)); S.fog.color.set(bot); hemi.groundColor.set(mix(Pp.c4, P.c4, kc));
   // câmera
+  const MV = V.moveDur ?? 1.1, inMove = i > 0 && tr === 'move' && lt < MV;
   let c = camAt(sc, lt);
-  if (inT && prev) { const pc = camAt(prev.sc, prev.sc.T1 - prev.sc.T0); const m = {}; for (const key in c) m[key] = typeof c[key] === 'number' ? lerp(pc[key], c[key], k) : c[key]; c = m; }
+  if (inMove) { const pc = camAt(SC_[i - 1], SC_[i - 1].T1 - SC_[i - 1].T0), km = eIO(lt / MV); const m = {}; for (const key in c) m[key] = typeof c[key] === 'number' ? lerp(pc[key], c[key], km) : c[key]; c = m; }
+  else if (inT && prev) { const pc = camAt(prev.sc, prev.sc.T1 - prev.sc.T0); const m = {}; for (const key in c) m[key] = typeof c[key] === 'number' ? lerp(pc[key], c[key], k) : c[key]; c = m; }
   const focus = placeCam(c, t);
   S.fog.near = c.d + 0.5; S.fog.far = c.d + 9;
   bokeh.uniforms.focus.value = focus; bloom.strength = P.light ? FX.bloom * 0.25 : FX.bloom;
@@ -303,18 +351,25 @@ function renderAt(t) {
     apply(it, xform(sc, it, lt, t), t);
   });
   // sombra calculada 1x por quadro (o passe de desfoque renderiza a cena de novo e não precisa recalcular)
+  tickSet(t);
   R.shadowMap.autoUpdate = false; R.shadowMap.needsUpdate = true;
   if (FX.bloom > 0 || FX.dof) composer.render(); else R.render(S, cam);
   // overlay
-  const acc = sc.acc || '#7dffb0';
+  const acc = sc.acc || V.acc || '#7dffb0';
   document.documentElement.style.setProperty('--acc', acc);
   const pillK = i > 0 ? eOut(lt / 0.35) : 1;
   $('pill').querySelector('span').textContent = sc.pill || '';
   $('pill').style.opacity = pillK; $('pill').style.transform = `translateX(${(1 - pillK) * -20 * SC}px)`;
-  $('pill').querySelector('i').style.background = P.light ? '#1d1d25' : '#e9fff2';
+  $('pill').querySelector('i').style.background = V.acc && !P.light ? V.acc : P.light ? '#1d1d25' : '#e9fff2';
+  $('pill').querySelector('i').style.boxShadow = `0 0 calc(10*var(--u)) ${acc}`;
   $('pill').style.background = P.light ? 'rgba(0,0,0,.08)' : 'rgba(0,0,0,.42)';
   $('pill').style.color = $('handle').style.color = P.light ? '#1d1d25' : '#fff';
+  lastLt = lt;
   $('hdr').innerHTML = hdrHTML(sc, lt);
+  $('mid').innerHTML = hdrHTML(sc, lt, 'mid');
+  const fon = sc.fontes ?? V.fontes; $('fontes').textContent = fon ? 'FONTES: ' + fon : ''; $('hdr').style.top = fon ? 'calc(182*var(--u))' : '';
+  const leg = sc.legenda === false ? null : (sc.legenda || V.legenda);
+  $('leg').innerHTML = leg ? leg.map(l => `<div>${l}</div>`).join('') : ''; $('leg').style.display = leg ? 'block' : 'none';
   const ch = capHTML(t); $('cap').firstElementChild.innerHTML = ch; $('cap').style.opacity = ch ? 1 : 0;
   dots(t, P.light, i > 0 && tr === 'flash' ? 0.85 * (1 - eOut(lt / 0.35)) : i > 0 && tr === 'zoom' ? 0.35 * Math.max(0, 1 - Math.abs(lt - TR * 0.45) / (TR * 0.25)) : 0); labels(cur);
   $('vig').style.opacity = P.light ? 0.55 : 1;
@@ -329,10 +384,12 @@ function events() {
       if (h.sfx === false) return; const a = sc.T0 + loc(sc, h, 'at', 't0', 0);
       if (h.sfx) return add(a, h.sfx);
       if (h.count) { const n = Math.round((h.count.dur || 1.4) / 0.07); for (let j = 0; j < n; j++) add(a + j * 0.07 * (1 + j / n), 'tick', 0.5); }
-      else if (h.stamp) add(a, 'stamp');
-      else if (h.num || h.title) add(a, 'pop', 0.9);
-      else if (h.tag || h.chips || h.rows) add(a, 'tick', 0.8);
+      else if (h.stamp || h.sticker) add(a, 'stamp', h.sticker ? 0.6 : 1);
+      else if (h.num || h.title || h.big) add(a, 'pop', 0.9);
+      else if (h.share) add(a, 'ding', 0.7);
+      else if (h.tag || h.chips || h.rows || h.card) add(a, 'tick', 0.8);
     });
+    (sc.callouts || []).forEach(c => add(sc.T0 + loc(sc, c, 'at', 't0', 0), 'tick', 0.45));
     (sc.objs || []).forEach(e => {
       if (e.sfx === false || e.id && i > 0 && (SC_[i - 1].objs || []).some(q => q.id === e.id)) return;
       const a = sc.T0 + loc(sc, e, 'at', 't0', 0);
