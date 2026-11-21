@@ -5,6 +5,7 @@
 const MESA = 0.78; // altura do tampo da mesa
 export default {
   tema: 'EXEMPLO PALCO',
+  estilo: 'B',
   handle: '@ESTEREOLUDICO',
   acc: '#ffe14a',                         // cor de destaque única
   bg: ['#0b0b0d', '#1f2026'],

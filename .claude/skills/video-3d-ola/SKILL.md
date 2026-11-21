@@ -18,6 +18,18 @@ Responder SOMENTE:
 (com a saudação certa para a hora). Não fazer mais nada até ele mandar a ideia.
 
 ## 2. Perguntas: não começar sem elas
+**PRIMEIRA pergunta, sempre: o ESTILO.** Mandar ao João as 3 prévias (`assets/estilo-A.jpg`, `estilo-B.jpg`, `estilo-C.jpg`,
+com SendUserFile quando existir, ou dizendo onde estão) e perguntar qual usar, com a recomendação pelo tema em 1º lugar:
+
+| Estilo | Nome | Visual | Recomendar quando |
+|---|---|---|---|
+| **A** | Mundo colorido | cada capítulo com uma cor de fundo (vermelho, azul, roxo, verde); objetos entram e saem; transições pan/sobe/zoom | notícia com muitos números, linha do tempo, biografia, "quanto custa", placar |
+| **B** | Palco amarelo | UM cenário fixo (`set`), câmera viajando (`trans:'move'`), fundo escuro + amarelo, etiquetas presas aos objetos, fontes na tela | caso com documentos, investigação, banco, sigilo, "por dentro de", prestação de contas |
+| **C** | Neon lima | fundo escuro + verde-lima `#b6ff3b`, holofote, selos de checagem, formatos de `formatos.md` (boato ou fato, ringue, dominó, globo) | boato × fato, utilidade pública (INSS, golpe, Pix), checagem, duelo, hipótese |
+
+No arquivo do vídeo, basta `estilo: 'A' | 'B' | 'C'`: o motor preenche cores, transição, desfoque e poeira.
+Os 3 estilos usam os mesmos objetos e cabeçalhos; o que muda é a direção de arte. Variar entre vídeos seguidos.
+
 Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
 - Ler a ideia e **só perguntar o que ainda não está claro**. Se ele já respondeu algo na ideia, não repetir.
 - Para cada pergunta, mostrar uma **sugestão padrão** entre colchetes. João pode responder só "padrão" ou "ok".
@@ -60,16 +72,14 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
 - Tema do MOMENTO (o que já está nos grupos de WhatsApp hoje), de preferência ligado ao bolso.
 - 1ª frase = informação-choque (sem "oi"). Escolher um dos 8 FORMATOS de `formatos.md` (checagem, boato ou fato,
   ringue, "e na sua vida?", o mundo reagiu, e se...?, dominó, metáfora lúdica) e dizer ao João qual foi escolhido.
-- Visual padrão: **fundo escuro + 1 cor de destaque** (verde-lima `#b6ff3b` da @ESTEREOLUDICO) + objetos brancos/cinza
-  + UMA metáfora-palco. O estilo A colorido continua disponível, mas deixou de ser o padrão.
+- Visual: o ESTILO escolhido pelo João (A, B ou C, seção 2). Em todos: 1 metáfora central forte, objeto-herói grande,
+  destaque de cor só no que importa.
 - Título de capítulo em frase completa (lê sem som), fontes na tela, os dois lados, selos de checagem quando couber.
 - Fechar com utilidade prática ("no seu bolso", "o que fazer") e CTA duplo: "Manda pra quem..." + "Comenta ESTÉREO".
 - Duração alvo 90 a 110 s, 6 a 10 capítulos.
 
-Existem 2 estilos (estudo completo em `references/estilos.md`): **A "mundo colorido"** (padrão) e **B "palco único"**
-(um cenário fixo `set`, câmera viajando `trans:'move'`, mundo neutro + 1 cor de destaque, etiquetas presas a objetos,
-fontes sempre na tela, número gigante no meio). Perguntar ao João qual usar, sugerindo pelo tema.
-Regras do estilo B: checklist no fim de `estilos.md`. Regras do estilo A:
+Estudo dos estilos: `references/estilos.md` (A e B) e `references/formatos.md` (C e os formatos de roteiro).
+Regras do estilo B: checklist no fim de `estilos.md`. Regras do estilo C: as 9 leis de `formatos.md`. Regras do estilo A:
 - **Mundo contínuo**: toda troca de capítulo com transição (`pan`, `up`, `zoom`); `pop` só dentro do mesmo capítulo; `flash` no CTA.
 - **Pelo menos 2 objetos que atravessam cenas** com `id` (o dinheiro que vira casa, o logo antigo que vira o novo...).
 - **Câmera viva**: no mínimo 3 cenas com `cam2` (travelling), `orbit` ou ângulo lateral/de cima. Nunca 3 cenas seguidas com a mesma câmera.
@@ -105,6 +115,7 @@ Rodar: `node -v && ffmpeg -version | head -1 && node -e "require('playwright')" 
 - Se o render falhar com WebGL, rodar `node scripts/shot.js videos/exemplo.js` para isolar o problema e ler os ERROS impressos.
 
 ## Arquivos
+- `assets/estilo-A.jpg`, `estilo-B.jpg`, `estilo-C.jpg`: prévias dos 3 estilos para mostrar ao João na pergunta de estilo.
 - `references/perguntas.md`: banco de perguntas + modelo do RESUMO DO PEDIDO.
 - `references/roteiro.md`: fórmula de roteiro (análise dos vídeos de referência), legenda do post, regras de números.
 - `references/motor.md`: formato do arquivo de vídeo, cabeçalhos, câmera e lista de objetos 3D.

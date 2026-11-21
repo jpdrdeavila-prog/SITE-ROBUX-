@@ -5,6 +5,7 @@ Tudo é função do tempo, então dá para pular para qualquer segundo e renderi
 
 ```js
 export default {
+  estilo: 'C',                     // A: Mundo colorido · B: Palco amarelo · C: Neon lima (preenche cores, transição, desfoque)
   tema: 'PLANO DA HERANÇA',        // aparece em "@ESTEREOLUDICO · PLANO DA HERANÇA"
   handle: '@ESTEREOLUDICO',
   cam: { d: 6.5 },                 // câmera padrão do vídeo (opcional)

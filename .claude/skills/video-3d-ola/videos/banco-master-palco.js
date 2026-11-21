@@ -52,6 +52,7 @@ const CAM = {
 
 export default {
   tema: 'CASO BANCO MASTER',
+  estilo: 'B',
   handle: '@ESTEREOLUDICO',
   acc: '#ffe14a',
   bg: ['#0b0b0d', '#1f2026'],

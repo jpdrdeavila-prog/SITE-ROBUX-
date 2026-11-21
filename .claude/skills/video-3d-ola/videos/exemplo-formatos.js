@@ -4,6 +4,7 @@
 const ACC = '#b6ff3b';
 export default {
   tema: 'EXEMPLO FORMATOS',
+  estilo: 'C',
   handle: '@ESTEREOLUDICO',
   acc: ACC, dust: ACC,
   bg: ['#07080b', '#15171d'],

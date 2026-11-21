@@ -27,6 +27,7 @@ const STF = L => {
 
 export default {
   tema: 'CASO BANCO MASTER',
+  estilo: 'A',
   handle: '@ESTEREOLUDICO',
   cam: { d: 6.5 },
   segs: [

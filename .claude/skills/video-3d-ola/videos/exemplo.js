@@ -4,6 +4,7 @@
 // Teste: node scripts/shot.js videos/exemplo.js   |   node scripts/render.js videos/exemplo.js --jobs 3
 export default {
   tema: 'EXEMPLO DO MOTOR',
+  estilo: 'A',
   handle: '@ESTEREOLUDICO',
   cam: { d: 6.5 },
   segs: [

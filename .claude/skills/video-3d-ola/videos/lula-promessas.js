@@ -27,6 +27,7 @@ const picanha = L => { // peça de picanha: carne vermelha em formato de cunha +
 
 export default {
   tema: 'PROMESSAS × ENTREGAS',
+  estilo: 'A',
   handle: '@ESTEREOLUDICO',
   cam: { d: 6.5 },
   segs: [

@@ -3,6 +3,9 @@
 Regra: perguntar só o que a ideia não respondeu. Sempre com sugestão padrão entre [colchetes].
 João pode responder "padrão" para aceitar todas as sugestões de um bloco.
 
+## 0. Estilo (sempre a primeira pergunta)
+0. Qual estilo? A: Mundo colorido / B: Palco amarelo / C: Neon lima. Mostrar `assets/estilo-*.jpg` e recomendar pelo tema.
+
 ## A. Tema e objetivo
 1. Qual é o fato exato? Aconteceu quando? Tem link da notícia? [vou pesquisar a notícia mais recente]
 2. Qual o ângulo? [bolso: quanto custa, quanto rende ou quem paga a conta] / curiosidade / polêmica / passo a passo.
@@ -22,7 +25,7 @@ João pode responder "padrão" para aceitar todas as sugestões de um bloco.
 13. Quantos capítulos? [5 a 7, com nome curto na pílula]
 
 ## C. Visual
-14a. Estilo? [fundo escuro + verde-lima + uma metáfora-palco (padrão)] / A: mundo colorido / B: palco único (um cenário, câmera passeando, mundo neutro + amarelo). Ver estilos.md: "quando usar cada estilo".
+14a. (PERGUNTAR PRIMEIRO, mostrando as 3 prévias de assets/) Estilo? A: Mundo colorido / B: Palco amarelo / C: Neon lima [recomendo o que combina com o tema; ver tabela no SKILL.md] (um cenário, câmera passeando, mundo neutro + amarelo). Ver estilos.md: "quando usar cada estilo".
 14. Cores? [automático: uma cor de mundo por capítulo, vermelho no capítulo de conflito, verde no fim]
 15. Tem algum objeto ou cena que **precisa** aparecer? [eu escolho os objetos-herói pelo tema]
 16. Boneco protagonista? [sim, branco/cinza neutro; verde quando for "você"]
@@ -53,7 +56,7 @@ Duração: ... s | Capítulos: ...
 Gancho: ...
 Tom: ...
 Proibido: ...
-Visual: estilo A/B ... | cores ... | objetos obrigatórios ... | qualidade ...
+Visual: estilo A (Mundo colorido) / B (Palco amarelo) / C (Neon lima) ... | cores ... | objetos obrigatórios ... | qualidade ...
 Áudio: narração ... | música ...
 Postagem: dia ... às ... no ...
 Entregas: vídeo MP4 + texto da narração + legenda do post + fontes

@@ -27,6 +27,7 @@ const CAM = {
 
 export default {
   tema: '13º DO INSS',
+  estilo: 'C',
   handle: '@ESTEREOLUDICO',
   acc: ACC, dust: ACC,
   bg: ['#07080b', '#16181e'],

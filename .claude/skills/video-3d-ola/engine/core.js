@@ -20,6 +20,14 @@ const V = (await import(Q.get('video'))).default;
 let TEMPOS = null;
 if (Q.get('tempos')) TEMPOS = await (await fetch(Q.get('tempos'))).json();
 V.handle ??= '@ESTEREOLUDICO';
+// ESTILOS (a skill pergunta ao João qual usar): preenchem só o que o vídeo não definiu
+const ESTILOS = {
+  A: { acc: '#7dffb0', trans: 'pan', fx: { bloom: 0.55, aperture: 0.0016, maxblur: 0.006 } },                       // Mundo colorido (bg por cena)
+  B: { acc: '#ffe14a', dust: '#ffe14a', bg: ['#0b0b0d', '#1f2026'], trans: 'move', fx: { bloom: 0.45, aperture: 0.003, maxblur: 0.009 } }, // Palco amarelo
+  C: { acc: '#b6ff3b', dust: '#b6ff3b', bg: ['#07080b', '#15171d'], trans: V.set ? 'move' : 'pan', fx: { bloom: 0.5, aperture: 0.0026, maxblur: 0.008 } }, // Neon lima
+};
+const EST = ESTILOS[String(V.estilo || '').toUpperCase()];
+if (EST) { for (const k of ['acc', 'dust', 'bg', 'trans']) if (V[k] == null && EST[k] != null) V[k] = EST[k]; V.fx = Object.assign({}, EST.fx, V.fx || {}); }
 V.fps ??= 30;
 V.cps ??= 15;
 const FX = Object.assign({ bloom: 0.55, dof: true, aperture: 0.0016, maxblur: 0.006, shadows: 'pcf' }, V.fx || {});

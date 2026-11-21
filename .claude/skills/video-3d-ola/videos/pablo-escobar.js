@@ -38,6 +38,7 @@ const AGUA = { k: 'water', o: { col: '#2b7f86', w: 6, d: 5 }, type: 'none', z: -
 
 export default {
   tema: 'PABLO ESCOBAR',
+  estilo: 'A',
   handle: '@ESTEREOLUDICO',
   cam: { d: 6.5 },
   segs: [
