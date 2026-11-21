@@ -176,6 +176,16 @@ export default {
 `brickHouse{crack(fn),collapse(fn)}` casa de tijolos com pilares que racha e desaba (metáfora de estrutura) ·
 `person{sash,badge,glasses,capCol,suit,pose,walk}` manequim com acessório de função.
 
+## Formatos (references/formatos.md): cabeçalhos e objetos
+Cabeçalhos: `{ quote: 'A taxa *triplicou*', who: 'FULANO DISSE' }` (cartão de citação) ·
+`{ seal: 'FALSO' | 'EXAGERADO' | 'VERDADEIRO' | 'CONFIRMADO' | 'NÃO CONFIRMADO' | 'BOATO' | 'EM PARTE', sub: 'FONTE', pos: 'mid' }` (selo de checagem) ·
+`{ bubble: 'PIX VAI SER TAXADO?', hl: true }` (balão de fala; hl = na cor de destaque).
+Objetos: `pulpit{txt}` púlpito com placa · `spotlight{r,on(fn)}` holofote com anel no chão · `boxingRing` ringue ·
+`dominoes{n,fall(fn),key}` dominós caindo em sequência · `satellite{beam(fn)}` satélite com feixe · `signalBars{lit(fn)}` barras de sinal ·
+`backpack` mochila · `bottle{fill}` garrafa d'água · `flashlight{on(fn)}` lanterna com facho · `filmReel` rolo de filme · `replayButton` botão play ·
+`partyDoor{lines,ok}` porta com cordão e lista · `handcuffs` algemas · `halo` auréola · `book{txt}` livro (lei/Constituição) ·
+`wire{from,to,sag,prog(fn)}` fio brilhante ligando 2 pontos · `globeCities{cities:[[lat,lon]],arcs:[[i,j]],prog(fn),spin}` globo com cidades e arcos.
+
 ## Efeitos sonoros (automáticos)
 O motor gera a lista de eventos e o `render.js` monta a trilha sozinho (sons sintetizados, sem direitos autorais):
 transição = whoosh (flash = ding, pop = pop) · número/título entrando = pop · contador = tique-tique · carimbo = stamp ·

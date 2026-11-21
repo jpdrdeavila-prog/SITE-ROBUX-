@@ -204,7 +204,7 @@ function hdrHTML(sc, lt, pos = 'top') {
     const a = loc(sc, h, 'at', 't0', 0), b = h.until != null || h.t1 != null ? loc(sc, h, 'until', 't1', 1e9) : 1e9;
     if (lt < a || lt >= b) return '';
     const k = eBack((lt - a) / 0.35), op = clamp((lt - a) / 0.2) * clamp((b - lt) / 0.15);
-    const st = `opacity:${op};transform:scale(${0.85 + 0.15 * k})${h.stamp || h.sticker ? ` rotate(${h.rot ?? (h.sticker ? -4 : -6)}deg)` : ''}${h.align === 'left' ? ';align-self:flex-start;align-items:flex-start;margin-left:calc(40*var(--u))' : ''}`;
+    const st = `opacity:${op};transform:scale(${0.85 + 0.15 * k})${h.stamp || h.sticker || h.seal ? ` rotate(${h.rot ?? (h.sticker ? -4 : h.seal ? -3 : -6)}deg)` : ''}${h.align === 'left' ? ';align-self:flex-start;align-items:flex-start;margin-left:calc(40*var(--u))' : ''}${h.quote || h.card ? ';align-self:stretch;align-items:stretch' : ''}`;
     let inner = '';
     if (h.big) {
       let n = h.big; if (h.count) { const c = h.count, p = eOut((lt - a) / (c.dur || 1.4)); n = (c.pre || '') + fmt(c.from + (c.to - c.from) * p, c.dec || 0) + (c.suf || ''); }
@@ -218,6 +218,11 @@ function hdrHTML(sc, lt, pos = 'top') {
     else if (h.handlePill) inner = `<div class="hpill">${V.handle}</div>`;
     else if (h.card) { const c = h.card;
       inner = `<div class="card" style="border-color:${acc}">${c.head ? `<b style="color:${acc}">${star(c.head, acc)}</b>` : ''}${(c.lines || []).map(l => `<div>${star(l, acc)}</div>`).join('')}</div>`; }
+    else if (h.quote) inner = `<div class="quote" style="border-color:${acc}">${h.who ? `<b style="color:${acc}">${h.who}</b>` : ''}<div>“${star(h.quote, acc)}”</div></div>`;
+    else if (h.seal) { const SEAL = { 'CONFIRMADO': ['#2f9e5a', '✓'], 'VERDADEIRO': ['#2f9e5a', '✓'], 'FALSO': ['#d93c3c', '✕'], 'BOATO': ['#d93c3c', '✕'], 'EXAGERADO': ['#e07b1f', '!'], 'NÃO CONFIRMADO': ['#c9a227', '?'], 'EM PARTE': ['#c9a227', '≈'] };
+      const [c, ic] = SEAL[h.seal] || [h.sealc || acc, '•'];
+      inner = `<div class="seal" style="background:${c}"><span>${ic}</span>${h.seal}${h.sub ? `<small>${h.sub}</small>` : ''}</div>`; }
+    else if (h.bubble) inner = `<div class="bubble ${h.hl ? 'hl' : ''}" style="${h.hl ? `background:${acc};color:#111` : ''}">${star(h.bubble, acc)}</div>`;
     else if (h.sticker) inner = `<div class="sticker">${star(h.sticker, '#b8860b')}${h.sub ? `<small>${h.sub}</small>` : ''}</div>`;
     else if (h.title) {
       const strike = h.strike && lt >= a + (h.strike === true ? 0.6 : h.strike);
@@ -386,7 +391,8 @@ function events() {
       if (h.sfx === false) return; const a = sc.T0 + loc(sc, h, 'at', 't0', 0);
       if (h.sfx) return add(a, h.sfx);
       if (h.count) { const n = Math.round((h.count.dur || 1.4) / 0.07); for (let j = 0; j < n; j++) add(a + j * 0.07 * (1 + j / n), 'tick', 0.5); }
-      else if (h.stamp || h.sticker) add(a, 'stamp', h.sticker ? 0.6 : 1);
+      else if (h.stamp || h.sticker || h.seal) add(a, 'stamp', h.sticker ? 0.6 : 1);
+      else if (h.quote || h.bubble) add(a, 'pop', 0.8);
       else if (h.num || h.title || h.big) add(a, 'pop', 0.9);
       else if (h.share) add(a, 'ding', 0.7);
       else if (h.tag || h.chips || h.rows || h.card) add(a, 'tick', 0.8);

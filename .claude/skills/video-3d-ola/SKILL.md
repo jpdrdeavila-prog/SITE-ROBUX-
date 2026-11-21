@@ -56,6 +56,16 @@ Depois da ideia, fazer a rodada de perguntas de `references/perguntas.md`.
 - Objetos sempre genéricos, sem logotipo real de marca. Nome de empresa pode aparecer como texto (ex.: "FERRARI" como rótulo).
 
 ## 5. Nível de acabamento (obrigatório, é o que deixa igual às referências)
+**Regras dos dados (10 reels com 1,9 a 4,7 mi de views, `references/formatos.md`):**
+- Tema do MOMENTO (o que já está nos grupos de WhatsApp hoje), de preferência ligado ao bolso.
+- 1ª frase = informação-choque (sem "oi"). Escolher um dos 8 FORMATOS de `formatos.md` (checagem, boato ou fato,
+  ringue, "e na sua vida?", o mundo reagiu, e se...?, dominó, metáfora lúdica) e dizer ao João qual foi escolhido.
+- Visual padrão: **fundo escuro + 1 cor de destaque** (verde-lima `#b6ff3b` da @ESTEREOLUDICO) + objetos brancos/cinza
+  + UMA metáfora-palco. O estilo A colorido continua disponível, mas deixou de ser o padrão.
+- Título de capítulo em frase completa (lê sem som), fontes na tela, os dois lados, selos de checagem quando couber.
+- Fechar com utilidade prática ("no seu bolso", "o que fazer") e CTA duplo: "Manda pra quem..." + "Comenta ESTÉREO".
+- Duração alvo 90 a 110 s, 6 a 10 capítulos.
+
 Existem 2 estilos (estudo completo em `references/estilos.md`): **A "mundo colorido"** (padrão) e **B "palco único"**
 (um cenário fixo `set`, câmera viajando `trans:'move'`, mundo neutro + 1 cor de destaque, etiquetas presas a objetos,
 fontes sempre na tela, número gigante no meio). Perguntar ao João qual usar, sugerindo pelo tema.
@@ -102,4 +112,6 @@ Rodar: `node -v && ffmpeg -version | head -1 && node -e "require('playwright')" 
 - `videos/exemplo.js`: modelo do estilo A (transições, morph, câmera, partículas, sons).
 - `videos/exemplo-palco.js`: modelo do estilo B (cenário fixo, câmera viajando, etiquetas, número no meio, compartilhar).
 - `references/estilos.md`: os 2 estilos desmontados quadro a quadro (material de estudo).
+- `references/formatos.md`: 8 formatos de roteiro dos vídeos mais vistos + biblioteca de ganchos e CTAs + selos.
+- `videos/exemplo-formatos.js`: módulos de cada formato (checagem, boato, ringue, dominó, globo, sinal, porta, apagão).
 - `scripts/sfx.js`: efeitos sonoros sintetizados (usado pelo render.js).

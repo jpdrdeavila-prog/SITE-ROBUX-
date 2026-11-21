@@ -14,6 +14,7 @@ João pode responder "padrão" para aceitar todas as sugestões de um bloco.
 
 ## B. Roteiro
 8. Duração? [95 s] (60 s curto / 85 a 110 s padrão / até 120 s)
+8a. Formato? [eu sugiro pelo tema: checagem / boato ou fato / ringue / "e na sua vida?" / o mundo reagiu / e se...? / dominó / metáfora lúdica] (ver formatos.md)
 9. Tipo de gancho? [número chocante + "e essa nem é a parte grande"] / pergunta "Se você..." / antes × depois / provocação.
 10. Tom? [conversa de amigo, sério nos números] / mais leve com humor / mais sério.
 11. Pode citar empresas e pessoas pelo nome? [sim no texto, objetos sempre sem logo]
@@ -21,7 +22,7 @@ João pode responder "padrão" para aceitar todas as sugestões de um bloco.
 13. Quantos capítulos? [5 a 7, com nome curto na pílula]
 
 ## C. Visual
-14a. Estilo? [A: mundo colorido, um capítulo por cor] / B: palco único (um cenário, câmera passeando, mundo neutro + amarelo). Ver estilos.md: "quando usar cada estilo".
+14a. Estilo? [fundo escuro + verde-lima + uma metáfora-palco (padrão)] / A: mundo colorido / B: palco único (um cenário, câmera passeando, mundo neutro + amarelo). Ver estilos.md: "quando usar cada estilo".
 14. Cores? [automático: uma cor de mundo por capítulo, vermelho no capítulo de conflito, verde no fim]
 15. Tem algum objeto ou cena que **precisa** aparecer? [eu escolho os objetos-herói pelo tema]
 16. Boneco protagonista? [sim, branco/cinza neutro; verde quando for "você"]

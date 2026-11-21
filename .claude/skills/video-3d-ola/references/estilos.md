@@ -105,3 +105,14 @@ etiqueta nova a cada 2 a 3 s.
 - [ ] Fontes na linha de fontes; números grandes com subtítulo de origem e data.
 - [ ] Pelo menos 3 objetos com movimento próprio (gaveta abrindo, cofre abrindo, rota no mapa, papel com linha acendendo).
 - [ ] Final de compartilhar + `handlePill`.
+
+---
+
+## ATUALIZAÇÃO 21/11/2026: o que os 10 mais vistos mostram (storyboard de 76 páginas)
+- Os DOIS criadores convergiram para o mesmo visual: **fundo escuro + 1 cor de destaque + metáfora-palco**.
+  O "mundo colorido por capítulo" (estilo A) aparece menos nos vídeos campeões.
+- O sucesso vem do **formato repetível** (checagem, rounds, boato × fato) e do **tema do dia**.
+- Compartilhamentos altíssimos (28 mil a 149 mil) vêm de: tema polêmico ou útil + CTA "manda pra quem…".
+- Detalhe técnico: legenda com a palavra falada na cor de destaque; selos verde ✓ / amarelo "não confirmado";
+  título de capítulo em frase completa; personagem sob holofote com anel de luz no chão.
+Detalhes e roteiros-modelo: `references/formatos.md`.

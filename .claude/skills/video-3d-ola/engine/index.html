@@ -60,6 +60,15 @@ html,body{width:var(--W);height:var(--H);overflow:hidden;background:#000}
 .callout b{font:700 calc(10.5*var(--u)) Mono,monospace;letter-spacing:.08em;text-transform:uppercase;color:#fff}
 .callout small{font:500 calc(8*var(--u)) Mono,monospace;letter-spacing:.08em;text-transform:uppercase;color:#9a9aa6;margin-top:calc(1*var(--u))}
 #leg{position:absolute;left:calc(40*var(--u));top:calc(838*var(--u));font:500 calc(9*var(--u))/1.45 Mono,monospace;letter-spacing:.08em;text-transform:uppercase;opacity:.75;background:rgba(0,0,0,.35);padding:calc(5*var(--u)) calc(8*var(--u));border-radius:calc(4*var(--u))}
+.quote{align-self:stretch;margin:0 calc(36*var(--u));background:rgba(8,10,14,.85);border-left:calc(4*var(--u)) solid;border-radius:calc(6*var(--u));padding:calc(8*var(--u)) calc(12*var(--u));font:800 calc(19*var(--u))/1.25 Inter;letter-spacing:-.01em}
+.quote b{display:block;font:700 calc(10*var(--u)) Mono,monospace;letter-spacing:.12em;margin-bottom:calc(4*var(--u))}
+.seal{display:flex;align-items:center;gap:calc(8*var(--u));color:#fff;padding:calc(7*var(--u)) calc(16*var(--u));border-radius:calc(8*var(--u));font:900 calc(24*var(--u)) Inter;letter-spacing:-.01em;text-transform:uppercase;box-shadow:0 calc(6*var(--u)) calc(20*var(--u)) rgba(0,0,0,.45);flex-wrap:wrap;justify-content:center;max-width:calc(600*var(--u))}
+.seal span{font-size:1.1em}
+.seal small{flex-basis:100%;text-align:center;font:700 calc(9.5*var(--u)) Mono,monospace;letter-spacing:.1em;opacity:.85}
+.bubble{position:relative;background:#f4f4f6;color:#111;padding:calc(8*var(--u)) calc(14*var(--u));border-radius:calc(14*var(--u));font:900 calc(18*var(--u)) Inter;text-transform:uppercase;letter-spacing:-.01em}
+.bubble:after{content:'';position:absolute;left:calc(22*var(--u));bottom:calc(-9*var(--u));border:calc(10*var(--u)) solid transparent;border-top-color:inherit;border-bottom:0}
+.bubble.hl:after{border-top-color:var(--acc)}
+.bubble:not(.hl):after{border-top-color:#f4f4f6}
 #cap{position:absolute;left:calc(40*var(--u));right:calc(40*var(--u));top:calc(915*var(--u));display:flex;justify-content:center}
 #cap div{background:rgba(10,12,16,.78);border-radius:calc(10*var(--u));padding:calc(8*var(--u)) calc(14*var(--u));max-width:calc(560*var(--u));
   text-align:center;font:800 calc(27*var(--u))/1.18 Inter;letter-spacing:-.025em}

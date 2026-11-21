@@ -648,7 +648,123 @@ export function person({ col = '#e9e9ee', pose = 'parado', walk = false, sash = 
   return g;
 }
 
+// ---------- FORMATOS (estudo dos 10 mais vistos): ringue, púlpito, holofote, dominó, satélite, globo de cidades... ----------
+function glowMat(col, op = 0.25) { return new THREE.MeshBasicMaterial({ color: C(col), transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }); }
+// holofote: cone de luz de cima + anel brilhante no chão (para destacar quem fala / o personagem da vez)
+export function spotlight({ col, r = 0.45, h = 2.6, on = 1 } = {}) {
+  const c = col || ACC(), cone = new THREE.Mesh(new THREE.ConeGeometry(r, h, 32, 1, true), glowMat(c, 0.07)); cone.position.y = h / 2;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.95, 0.018, 8, 48), mat(c, { glow: 0.8 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.015;
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(r * 0.95, 40), glowMat(c, 0.09)); disc.rotation.x = -Math.PI / 2; disc.position.y = 0.01;
+  const g = group(cone, ring, disc); g.userData.tick = (lt) => { const k = clamp01(val(on, lt)); cone.visible = disc.visible = ring.visible = k > 0.01; cone.material.opacity = 0.07 * k; disc.material.opacity = 0.09 * k; };
+  return g;
+}
+export function pulpit({ txt = '', col = '#e9e9ee' } = {}) { // púlpito de debate com placa
+  const g = group(box(0.62, 0.95, 0.42, col, { rd: 0.03 }), box(0.7, 0.05, 0.5, col, { y: 0.95, rd: 0.02 }));
+  if (txt) { g.add(box(0.5, 0.14, 0.02, ACC(), { y: 0.62, z: 0.215, rd: 0.01, glow: 0.4 })); const t = text({ txt, h: 0.08, col: '#111' }); t.position.set(0, 0.65, 0.23); g.add(t); }
+  return g;
+}
+export function boxingRing({ w = 2.4, col = '#d9dbe2', rope } = {}) { // ringue (duelo, "quem manda mais", rounds)
+  const g = group(box(w, 0.2, w, '#3a3c44', { rd: 0.02 }), box(w - 0.06, 0.02, w - 0.06, col, { y: 0.2, rd: 0 }));
+  const posts = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => cyl(0.04, 0.7, '#c9ccd6', { x: a * (w / 2 - 0.05), z: b * (w / 2 - 0.05), y: 0.2 }));
+  g.add(...posts);
+  const rm = mat(rope || ACC(), { glow: 0.5 });
+  [0.42, 0.6, 0.78].forEach(y => { [[0, -1], [0, 1]].forEach(([, b]) => g.add(box(w - 0.1, 0.02, 0.02, null, { m: rm, y, z: b * (w / 2 - 0.05), base: false })));
+    [[-1, 0], [1, 0]].forEach(([a]) => g.add(box(0.02, 0.02, w - 0.1, null, { m: rm, x: a * (w / 2 - 0.05), y, base: false }))); });
+  return g;
+}
+// fileira de dominós que caem em sequência (causa → consequência); fall 0..1; key = índice da peça destacada
+export function dominoes({ n = 8, gap = 0.32, fall = 0, key = -1, col = '#e9e9ee' } = {}) {
+  const g = new THREE.Group(), ps = [];
+  for (let i = 0; i < n; i++) { const p = new THREE.Group(); p.position.x = (i - (n - 1) / 2) * gap; g.add(p);
+    const b = box(0.12, 0.6, 0.3, i === key ? ACC() : col, { x: 0.06, rd: 0.02, glow: i === key ? 0.4 : 0 }); b.position.x = 0.06; p.add(b);
+    for (let d = 0; d < 3; d++) p.add(sph(0.018, '#333', { x: 0.125, y: 0.15 + d * 0.15 })); ps.push(p); }
+  g.userData.tick = (lt) => { const k = clamp01(val(fall, lt)) * (n + 1); ps.forEach((p, i) => { p.rotation.z = -clamp01(k - i) * 1.25; }); };
+  return g;
+}
+export function satellite({ beam = 1, col = '#d9dbe2' } = {}) { // satélite com feixe de sinal para baixo
+  const m = mat(col, { r: 0.3 }), pm = mat('#2c3a66', { r: 0.2, glow: 0.1 });
+  const g = group(box(0.3, 0.3, 0.3, null, { m, y: 1.8, rd: 0.03 }), box(0.7, 0.02, 0.3, null, { m: pm, x: -0.55, y: 1.94, rd: 0 }), box(0.7, 0.02, 0.3, null, { m: pm, x: 0.55, y: 1.94, rd: 0 }));
+  const dish = mesh(new THREE.SphereGeometry(0.12, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), m); dish.rotation.x = Math.PI; dish.position.y = 1.78; g.add(dish);
+  const bm = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.75, 32, 1, true), glowMat(ACC(), 0.14)); bm.position.y = 0.9; g.add(bm);
+  g.userData.tick = (lt) => { const k = clamp01(val(beam, lt)); bm.visible = k > 0.01; bm.material.opacity = 0.14 * k * (0.8 + 0.2 * Math.sin(lt * 6)); g.children[0].rotation.y = lt * 0.2; };
+  return g;
+}
+export function signalBars({ lit = 4, col = '#5a5d66' } = {}) { // barras de sinal do celular
+  const g = new THREE.Group(), bs = [0, 1, 2, 3].map(i => { const b = box(0.12, 0.15 + i * 0.13, 0.12, col, { x: (i - 1.5) * 0.17, rd: 0.02 }); g.add(b); return b; });
+  g.userData.tick = (lt) => { const L = val(lit, lt); bs.forEach((b, i) => { const on = i < L; b.material.color.copy(C(on ? ACC() : col)); b.material.emissive.copy(on ? C(ACC()) : new THREE.Color(0)); b.material.emissiveIntensity = on ? 0.5 : 0; }); };
+  return g;
+}
+export function backpack({ col } = {}) {
+  const c = col || ACC(); return group(box(0.42, 0.55, 0.26, c, { rd: 0.08, glow: col ? 0 : 0.2 }), box(0.3, 0.2, 0.08, c, { y: 0.08, z: 0.15, rd: 0.04 }), box(0.04, 0.4, 0.04, '#333', { x: -0.12, y: 0.1, z: -0.15, rd: 0.01 }), box(0.04, 0.4, 0.04, '#333', { x: 0.12, y: 0.1, z: -0.15, rd: 0.01 }));
+}
+export function bottle({ col = '#bfe2ff', fill = 0.8 } = {}) {
+  const glass = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.5, 24, 1, true), mat(col, { op: 0.35, r: 0.05, side: THREE.DoubleSide }), false); glass.position.y = 0.25;
+  const water = cyl(0.092, 0.5 * fill, ACC(), { glow: 0.35 }); water.material.opacity = 0.85; water.material.transparent = true;
+  return group(glass, water, cyl(0.05, 0.1, col, { y: 0.5, op: 0.5 }), cyl(0.055, 0.04, '#2a6fdb', { y: 0.6 }));
+}
+export function flashlight({ on = 1 } = {}) { // lanterna com facho de luz
+  const body = cyl(0.06, 0.4, '#2a2a33', { y: 0 }); body.rotation.z = Math.PI / 2; body.position.set(0, 0.07, 0);
+  const head = cyl(0.09, 0.1, '#3a3a44'); head.rotation.z = Math.PI / 2; head.position.set(0.24, 0.07, 0);
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2.2, 32, 1, true), glowMat(ACC(), 0.16)); beam.rotation.z = Math.PI / 2; beam.position.set(1.4, 0.07, 0);
+  const g = group(body, head, beam); g.userData.tick = (lt) => { const k = clamp01(val(on, lt)); beam.visible = k > 0.01; beam.material.opacity = 0.16 * k; };
+  return g;
+}
+export function filmReel({ col = '#d9dbe2' } = {}) { // rolo de filme (linha do tempo / "replay")
+  const m = mat(col, { r: 0.3 }), reel = new THREE.Group(); reel.position.y = 0.5;
+  const disc = cyl(0.45, 0.06, null, { m }); disc.rotation.x = Math.PI / 2; disc.position.y = 0; reel.add(disc);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, h = cyl(0.09, 0.08, '#1d1d22', { x: Math.cos(a) * 0.25, z: 0 }); h.rotation.x = Math.PI / 2; h.position.set(Math.cos(a) * 0.25, Math.sin(a) * 0.25, 0); reel.add(h); }
+  const g = group(reel, box(1.4, 0.18, 0.01, '#2a2a30', { x: 0.9, y: 0.1, rd: 0 }));
+  for (let i = 0; i < 4; i++) g.add(box(0.26, 0.12, 0.012, ACC(), { x: 0.35 + i * 0.33, y: 0.13, z: 0.006, rd: 0, glow: 0.4 }));
+  g.userData.tick = (lt) => { reel.rotation.z = -lt * 0.8; }; return g;
+}
+export function replayButton({ col } = {}) {
+  const c = col || ACC(), d = cyl(0.3, 0.08, c, { glow: 0.45 }); d.rotation.x = Math.PI / 2; d.position.y = 0.32;
+  const tri = mesh(new THREE.ConeGeometry(0.12, 0.2, 3), mat('#111')); tri.rotation.z = -Math.PI / 2; tri.position.set(0.02, 0.32, 0.05);
+  return group(d, tri);
+}
+export function partyDoor({ lines = 5, ok = 3 } = {}) { // porta com cordão e lista (o que "entra" e o que fica de fora)
+  const g = group(box(0.9, 1.5, 0.12, '#2a2a33', { rd: 0.02 }), box(0.7, 1.35, 0.02, '#111', { y: 0.03, z: 0.07, rd: 0 }));
+  [-0.7, 0.7].forEach(x => g.add(cyl(0.03, 0.6, '#c9ccd6', { x, z: 0.5 }), sph(0.05, '#c9ccd6', { x, y: 0.62, z: 0.5 })));
+  const rope = box(1.4, 0.03, 0.03, ACC(), { y: 0.55, z: 0.5, glow: 0.4, base: false }); rope.position.y = 0.55; g.add(rope);
+  const board = group(box(0.4, 0.55, 0.02, '#f2f0ea', { rd: 0.01 })); board.position.set(0.75, 0.6, 0.2); g.add(board);
+  for (let i = 0; i < lines; i++) board.add(box(0.26, 0.03, 0.005, i < ok ? ACC() : '#9aa0b0', { y: 0.45 - i * 0.08, z: 0.012, rd: 0, glow: i < ok ? 0.4 : 0 }));
+  return g;
+}
+export function handcuffs({ col = '#c9ccd6' } = {}) {
+  const m = mat(col, { r: 0.25 }), a = mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 24), m), b = mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 24), m);
+  a.position.set(-0.17, 0.14, 0); b.position.set(0.17, 0.14, 0); a.rotation.x = b.rotation.x = Math.PI / 2;
+  return group(a, b, box(0.12, 0.02, 0.02, null, { m, y: 0.14, base: false }));
+}
+export function halo({ col } = {}) { const h = mesh(new THREE.TorusGeometry(0.16, 0.02, 8, 32), mat(col || ACC(), { glow: 1.2 })); h.rotation.x = Math.PI / 2; h.position.y = 0.02; const g = group(h); g.userData.tick = (lt) => { h.position.y = 0.02 + Math.sin(lt * 2) * 0.02; }; return g; }
+export function book({ txt = 'CONSTITUIÇÃO', col = '#2c3a66', open = 0 } = {}) {
+  const g = group(box(0.6, 0.12, 0.8, col, { rd: 0.02 }), box(0.56, 0.1, 0.76, '#f2f0ea', { y: 0.01, x: 0.02, rd: 0.005 }));
+  const t = text({ txt, h: 0.06, col: ACC() }); t.rotation.x = -Math.PI / 2; t.position.set(0, 0.125, 0); g.add(t);
+  return g;
+}
+// fio brilhante ligando 2 pontos (ligações entre pessoas/empresas); prog 0..1 desenha o fio
+export function wire({ from = [-1, 0.5, 0], to = [1, 0.5, 0], sag = 0.3, prog = 1, col } = {}) {
+  const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to), mid = a.clone().add(b).multiplyScalar(0.5); mid.y -= sag;
+  const curve = new THREE.QuadraticBezierCurve3(a, mid, b), m = mat(col || ACC(), { glow: 0.9 }), segs = [];
+  const g = new THREE.Group();
+  for (let i = 0; i < 40; i++) { const p = curve.getPoint(i / 39), s_ = sph(0.018, null, { m }); s_.position.copy(p); s_.castShadow = false; g.add(s_); segs.push(s_); }
+  g.userData.tick = (lt) => { const k = clamp01(val(prog, lt)); segs.forEach((s_, i) => (s_.visible = i / segs.length <= k)); };
+  return g;
+}
+// globo escuro com grade, cidades em pontos brilhantes e arcos pontilhados entre elas (mercado mundial, rotas)
+export function globeCities({ r = 0.9, cities = [[-15, -48], [40.7, -74], [35.7, 139.7], [51.5, -0.1]], arcs = [[0, 1], [0, 2], [0, 3]], prog = 1, spin = 0.15 } = {}) {
+  const g = new THREE.Group(), body = new THREE.Group(); body.position.y = r + 0.05; g.add(body);
+  body.add(mesh(new THREE.SphereGeometry(r, 48, 32), mat('#14213f', { r: 0.6 })));
+  const grid = new THREE.Mesh(new THREE.SphereGeometry(r * 1.003, 24, 16), new THREE.MeshBasicMaterial({ color: '#2f4475', wireframe: true, transparent: true, opacity: 0.35 })); body.add(grid);
+  const P = ([la, lo], rr = r * 1.01) => { const phi = (90 - la) * Math.PI / 180, th = (lo + 180) * Math.PI / 180; return new THREE.Vector3(-rr * Math.sin(phi) * Math.cos(th), rr * Math.cos(phi), rr * Math.sin(phi) * Math.sin(th)); };
+  const cm = mat(ACC(), { glow: 1.0 }); cities.forEach(c => { const s_ = sph(0.035, null, { m: cm }); s_.position.copy(P(c)); body.add(s_); });
+  const arcPts = arcs.map(([i, j]) => { const a = P(cities[i]), b = P(cities[j]), ms = [];
+    for (let k = 0; k <= 30; k++) { const t = k / 30, v = a.clone().lerp(b, t).normalize().multiplyScalar(r * (1.02 + Math.sin(t * Math.PI) * 0.25)); const d = sph(0.012, null, { m: cm }); d.position.copy(v); body.add(d); ms.push(d); } return ms; });
+  g.userData.tick = (lt) => { body.rotation.y = lt * spin - 0.6; const k = clamp01(val(prog, lt)); arcPts.forEach(ms => ms.forEach((d, i) => (d.visible = i / ms.length <= k))); };
+  return g;
+}
+
 export const LIB = {
+  spotlight, pulpit, boxingRing, dominoes, satellite, signalBars, backpack, bottle, flashlight, filmReel, replayButton, partyDoor, handcuffs, halo, book, wire, globeCities,
   receipt, padlock, ledger, calculator, register, cowBank, ballotBox, desk, filingCabinet, wallMap, lamp, safe, goldBars, brickHouse, person,
   rain, coinRain, billRain, confetti, sparkles, f1car, boat, water, truck, storeFront, logoCard, trophy, podium, magnifier,
   laptop, suitcase, bed, plane, bigCoin, gavel, lineChart,
