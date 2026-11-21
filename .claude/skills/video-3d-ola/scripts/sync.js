@@ -65,7 +65,7 @@ function falado(t) {
       if (len < 0.25) continue;
       // pausas longas DENTRO da fala custam caro (exceto onde o texto tem vírgula/dois-pontos)
       const inner = []; for (let q = k + 1; q < j; q++) { const pl = B[q].b - B[q].a; if (pl >= 0.3) inner.push(Math.min(1.2, (pl - 0.25) * 2.5)); }
-      inner.sort((u, v) => v - u); const free = (txt[i - 1].match(/[,:;]/g) || []).length;
+      inner.sort((u, v) => v - u); const free = (txt[i - 1].trim().slice(0, -1).match(/[,:;?!.]/g) || []).length; // pontuação no MEIO da fala permite pausa
       const pin = inner.slice(free).reduce((u, v) => u + v, 0);
       const e = (len - exp[i - 1]) / exp[i - 1], c = dp[i - 1][k] + e * e + pin + (j === m - 1 ? 0 : (1 - B[j].s) * 0.9);
       if (c < dp[i][j]) { dp[i][j] = c; bk[i][j] = k; }
