@@ -227,7 +227,7 @@ function hdrHTML(sc, lt, pos = 'top') {
     else if (h.card) { const c = h.card;
       inner = `<div class="card" style="border-color:${acc}">${c.head ? `<b style="color:${acc}">${star(c.head, acc)}</b>` : ''}${(c.lines || []).map(l => `<div>${star(l, acc)}</div>`).join('')}</div>`; }
     else if (h.quote) inner = `<div class="quote" style="border-color:${acc}">${h.who ? `<b style="color:${acc}">${h.who}</b>` : ''}<div>“${star(h.quote, acc)}”</div></div>`;
-    else if (h.seal) { const SEAL = { 'CONFIRMADO': ['#2f9e5a', '✓'], 'VERDADEIRO': ['#2f9e5a', '✓'], 'FALSO': ['#d93c3c', '✕'], 'BOATO': ['#d93c3c', '✕'], 'EXAGERADO': ['#e07b1f', '!'], 'NÃO CONFIRMADO': ['#c9a227', '?'], 'EM PARTE': ['#c9a227', '≈'] };
+    else if (h.seal) { const SEAL = { 'CONFIRMADO': ['#2f9e5a', '✓'], 'VERDADEIRO': ['#2f9e5a', '✓'], 'FALSO': ['#d93c3c', '✕'], 'BOATO': ['#d93c3c', '✕'], 'EXAGERADO': ['#e07b1f', '!'], 'NÃO CONFIRMADO': ['#c9a227', '?'], 'EM PARTE': ['#c9a227', '≈'], 'ADIADO': ['#3d7be0', '⏸'] };
       const [c, ic] = SEAL[h.seal] || [h.sealc || acc, '•'];
       inner = `<div class="seal" style="background:${c}"><span>${ic}</span>${h.seal}${h.sub ? `<small>${h.sub}</small>` : ''}</div>`; }
     else if (h.bubble) inner = `<div class="bubble ${h.hl ? 'hl' : ''}" style="${h.hl ? `background:${acc};color:#111` : ''}">${star(h.bubble, acc)}</div>`;

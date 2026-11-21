@@ -135,3 +135,4 @@ Motor: `partyDoor`, `filmReel` + `replayButton`, `flashlight` + `bg` bem escuro,
 | `FALSO` / `BOATO` | vermelho ✕ | desmentido com fonte |
 | `EXAGERADO` | laranja ! | número inflado |
 | `NÃO CONFIRMADO` / `EM PARTE` | amarelo ? / ≈ | circula sem prova / parcialmente verdade |
+| `ADIADO` | azul ⏸ | regra/prazo que mudou de data |
