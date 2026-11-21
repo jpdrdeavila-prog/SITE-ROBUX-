@@ -9,7 +9,7 @@ const RECIPES = {
   stamp: ["aevalsrc='0.9*sin(2*PI*(55+140*exp(-t*28))*t)*exp(-t*9)+0.35*(random(0)-0.5)*exp(-t*40)':d=0.45:s=44100", 'lowpass=f=1800,volume=1.1'],
   thud: ["aevalsrc='0.8*sin(2*PI*(70+90*exp(-t*35))*t)*exp(-t*14)':d=0.3:s=44100", 'volume=0.9'],
   ding: ["aevalsrc='0.35*(sin(2*PI*1320*t)+0.5*sin(2*PI*1980*t)+0.25*sin(2*PI*2640*t))*exp(-t*4.5)':d=0.9:s=44100", 'volume=0.8'],
-  cash: ["aevalsrc='0.4*(sin(2*PI*2100*t)+sin(2*PI*2800*t))*exp(-t*9)*(t<0.12?1:0.6)':d=0.5:s=44100", 'volume=0.7'],
+  cash: ["aevalsrc='0.4*(sin(2*PI*2100*t)+sin(2*PI*2800*t))*exp(-t*9)*if(lt(t,0.12),1,0.6)':d=0.5:s=44100", 'volume=0.7'],
 };
 function sound(name) {
   const r = RECIPES[name] || RECIPES.pop;
