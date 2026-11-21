@@ -140,6 +140,8 @@ function makeScene(i) {
 function dropScene(s) { if (!s) return; S.remove(s.root, s.pers); dispose(s.root); dispose(s.pers); }
 let cur = null, prev = null;
 // PALCO: objetos de V.set ficam montados o vídeo inteiro (a câmera passeia entre eles)
+// SEGA(i) = segundo em que a fala i começa (use nas funções do set: t => (t - SEGA(9)) / 1)
+globalThis.SEGA = i => (SEGS[i] ? SEGS[i].a : 0);
 const SET = [];
 if (V.set) { Object.assign(PAL, palFrom(V.bg || DEFBG), { acc: V.acc || '#7dffb0' });
   V.set.forEach(e => { const holder = new THREE.Group(), o = makeObj(e); holder.add(o); S.add(holder);

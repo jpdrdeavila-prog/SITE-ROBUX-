@@ -144,7 +144,8 @@ export default {
   trans: 'move',                // padrão: só a câmera viaja entre os pontos do cenário
   moveDur: 1.1,                 // duração da viagem de câmera
   set: [ /* objetos FIXOS do cenário (montados 1 vez, ficam o vídeo todo) */
-    { id: 'mesa', make: L => L.desk({ open: t => (t - 15) / 0.8 }) },        // aqui t = segundos do VÍDEO
+    { id: 'mesa', make: L => L.desk({ open: t => (t - SEGA(7)) / 0.8 }) },   // t = segundos do VÍDEO; SEGA(7) = início da fala 7
+    // use SEGA(i) (e não segundos fixos) para que tudo continue sincronizado quando a voz real chegar
     { id: 'livro', k: 'ledger', o: { hl: 2 }, x: -0.4, y: 0.78, anchorY: 0.5 },
   ],
   scenes: [
