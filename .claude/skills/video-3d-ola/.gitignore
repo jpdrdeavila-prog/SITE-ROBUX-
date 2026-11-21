@@ -3,3 +3,4 @@ videos/previa_*/
 videos/*.mp4
 videos/*.mp3
 videos/*.tempos.json
+videos/*.wav
