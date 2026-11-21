@@ -1,6 +1,6 @@
 // "O Lula vai fazer o Brasil realmente andar?" · promessas × entregas · ~60 s · neutro (os dois lados)
 // Fontes: TRE-SP/InfoMoney (eleição), Agência Gov (IR), InfoMoney (mínimo), B3/CNN (picanha),
-// IBGE/CNN (desemprego), Copom via Suno/IstoÉ (Selic, conferir no BC), BC via Correio/Terra (dívida).
+// IBGE/CNN (desemprego), Copom: ata nº 282 no site do BC + Agência Brasil (Selic, confirmada), BC via Correio/Terra (dívida).
 
 // estrada com faixas que correm (speed = velocidade do "Brasil")
 const road = (speed) => L => {
