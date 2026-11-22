@@ -50,7 +50,7 @@ export default {
     { k: 'stamp', make: L => L.gavel({}), x: -0.25, y: MESA, z: -0.25, s: 0.6 },
     { make: L => L.skyline({ n: 6, col: '#3a3d46', lit: 0.5 }), x: 2.4, z: -0.8, id: 'obras', anchorY: 0.9 },
     { k: 'scaffold', x: 2.0, z: 0.1, s: 0.7, id: 'obra' },
-    { make: casas, x: -2.4, z: 0.4, id: 'casas', anchorY: 0.9 },
+    { make: casas, x: -2.4, z: 0.4, s: 0.68, id: 'casas', anchorY: 0.9 },
   ],
   segs: [
     'Tá circulando que, a partir de 1º de dezembro,',          // 0
@@ -77,7 +77,7 @@ export default {
     { from: 0, pill: 'O BOATO', cam: CAM.geral, cam2: { ...CAM.geral, d: 6.0, yaw: 6 },
       hdr: [{ bubble: 'VENDER IMÓVEL VAI EXIGIR NOTA?', hl: true }],
       callouts: [{ target: 'casas', t: 'SUA CASA', s: 'PRECISA DE NOTA?', dx: 50, dy: -110 }],
-      objs: [{ k: 'spotlight', o: { r: 1.2 }, x: -2.4, z: 0.4, type: 'none' }] },
+      objs: [{ k: 'spotlight', o: { r: 0.95 }, x: -2.4, z: 0.4, type: 'none' }] },
     { from: 2, pill: 'O BOATO', trans: 'move', cam: CAM.cel, cam2: { ...CAM.cel, d: 1.7 },
       hdr: [{ title: 'É *verdade*?', align: 'left', small: true, kicker: 'A PERGUNTA' }],
       callouts: [{ target: 'cel', t: 'CIRCULA NAS REDES', s: '"A PARTIR DE 1º DE DEZEMBRO"', dx: 60, dy: -140 }], fx: ['sparkle'] },
