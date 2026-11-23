@@ -1,6 +1,6 @@
 # Post: "Pra onde vai o dinheiro da sua aposta na Mega da Virada?"
 
-Postagem: quarta-feira, 25/11/2026, às 18h, no Instagram Reels.
+Postagem: segunda-feira, 23/11/2026, às 18h, no Instagram Reels.
 
 ## Legenda do post
 
