@@ -228,6 +228,7 @@ async function executar(id) {
       const t = await rodar('node', [path.join(SKILL, 'scripts', 'render.js'), path.join(pasta, 'video.js'), '--voz', path.join(pasta, 'voz.mp3'), '--out', path.join(pasta, 'video.mp4'), '--jobs', String(cfg.jobsRender || 3)], l => { if (!/quadro \d+$/.test(l) || Math.random() < 0.15) log('render', l); }, 3 * 3600e3);
       if (t.codigo !== 0 || !fs.existsSync(path.join(pasta, 'video.mp4'))) throw new Error('Falha no render:\n' + t.saida.slice(-800));
       fs.rmSync(path.join(pasta, 'video_quadros'), { recursive: true, force: true });
+      fs.rmSync(path.join(pasta, 'video_sfx.wav'), { force: true });
     },
 
     // 9. REDATOR: legenda + 1º comentário com fontes
