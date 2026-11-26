@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estúdio Estéreo</title>
+<style>
+:root{--bg:#0f1014;--painel:#17181e;--card:#1e2028;--linha:#2c2f3a;--txt:#e9e9ee;--fraco:#8d92a6;--acc:#ffe14a;--ok:#5dff9e;--erro:#ff5a5f;--esp:#4d7cff;--roda:#ffb347}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+a{color:var(--acc)}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--linha);background:var(--painel);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+header h1{font-size:16px;margin:0;letter-spacing:.5px}
+header h1 b{color:var(--acc)}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;color:var(--fraco);padding:7px 11px;border-radius:8px;cursor:pointer;font:inherit}
+nav button.on{background:var(--card);color:var(--txt)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:99px;background:var(--card);font-size:12px;color:var(--fraco)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--fraco)}
+main{padding:16px;max-width:1280px;margin:0 auto}
+.btn{background:var(--acc);color:#111;border:0;border-radius:8px;padding:9px 14px;font:600 14px system-ui;cursor:pointer}
+.btn.sec{background:var(--card);color:var(--txt);border:1px solid var(--linha)}
+.btn.verm{background:var(--erro);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+input,select,textarea{background:var(--bg);color:var(--txt);border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font:inherit;width:100%}
+textarea{min-height:70px;resize:vertical}
+label{display:block;font-size:12px;color:var(--fraco);margin:10px 0 4px}
+.caixa{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:14px;margin-bottom:14px}
+.caixa h2{font-size:14px;margin:0 0 10px;color:var(--fraco);text-transform:uppercase;letter-spacing:1px}
+.linha{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.linha>*{flex:1;min-width:160px}
+.linha>.btn{flex:0 0 auto}
+/* canvas */
+#canvas{position:relative;overflow:auto;background:radial-gradient(circle,#262833 1px,transparent 1px) 0 0/22px 22px;border-radius:12px;border:1px solid var(--linha);min-height:300px}
+#canvas svg{position:absolute;inset:0;pointer-events:none}
+.no{position:absolute;width:200px;background:var(--card);border:2px solid var(--linha);border-radius:12px;padding:10px 12px;cursor:pointer;transition:border-color .2s,transform .1s}
+.no:hover{transform:translateY(-1px)}
+.no .t{font-weight:600}
+.no .a{font-size:12px;color:var(--fraco);display:flex;align-items:center;gap:6px;margin-top:3px}
+.no .s{position:absolute;top:-10px;right:10px;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--linha);color:var(--txt)}
+.no.ok{border-color:var(--ok)}.no.ok .s{background:var(--ok);color:#111}
+.no.erro{border-color:var(--erro)}.no.erro .s{background:var(--erro)}
+.no.rodando{border-color:var(--roda);animation:pulsa 1.2s infinite}.no.rodando .s{background:var(--roda);color:#111}
+.no.aguardando,.no.manual{border-color:var(--acc)}.no.aguardando .s,.no.manual .s{background:var(--acc);color:#111}
+.no.sel{box-shadow:0 0 0 3px #ffffff33}
+@keyframes pulsa{50%{box-shadow:0 0 18px #ffb34766}}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px;max-height:560px;overflow:auto;padding-right:4px}
+.msg{background:var(--card);border-radius:12px;padding:10px 12px;border-left:4px solid var(--fraco)}
+.msg .q{font-size:12px;color:var(--fraco);margin-bottom:4px;display:flex;gap:8px;align-items:center}
+.msg .q b{color:var(--txt)}
+.msg pre{white-space:pre-wrap;margin:0;font:13px/1.5 system-ui}
+.msg details{margin-top:6px;font-size:12px;color:var(--fraco)}
+.log{font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--fraco);max-height:300px;overflow:auto;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:8px}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:860px){.grade{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px;border-bottom:1px solid var(--linha);text-align:left;font-size:13px;vertical-align:top}
+tr.click{cursor:pointer}tr.click:hover{background:var(--card)}
+.aviso{background:#ffe14a1a;border:1px solid #ffe14a55;border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.chave{display:flex;align-items:center;gap:8px}
+.chave .dot.on{background:var(--ok)}.chave .dot.off{background:var(--erro)}
+video,img.previa{max-width:100%;border-radius:10px;background:#000}
+video{max-height:520px}
+.vazio{color:var(--fraco);text-align:center;padding:30px}
+.mini{font-size:12px;color:var(--fraco)}
+.drawer{position:fixed;right:0;top:0;bottom:0;width:min(460px,100%);background:var(--painel);border-left:1px solid var(--linha);padding:16px;overflow:auto;z-index:10;transform:translateX(100%);transition:transform .2s}
+.drawer.on{transform:none}
+.x{float:right;background:none;border:0;color:var(--fraco);font-size:22px;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>ESTÚDIO <b>ESTÉREO</b></h1>
+  <nav id="nav"></nav>
+  <span style="flex:1"></span>
+  <span class="pill" id="agendaPill"><span class="dot"></span> agenda</span>
+  <span class="pill" id="relogio"></span>
+</header>
+<main id="tela"></main>
+<div class="drawer" id="drawer"></div>
+
+<script>
+const TELAS = { fluxo: 'Fluxo', execucoes: 'Execuções', agentes: 'Agentes', relatorios: 'Relatórios', config: 'Configurações' };
+const ST = { esperando: 'esperando', rodando: 'rodando', ok: 'feito', erro: 'erro', aguardando: 'aguardando você', manual: 'postar manual' };
+let S = null, tela = 'fluxo', atual = null, execAtual = null, noSel = null;
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const api = async (u, o = {}) => { const r = await fetch(u, { ...o, headers: o.body && !(o.body instanceof Blob) && !(o.body instanceof File) ? { 'content-type': 'application/json' } : {} }); return r.json(); };
+const post = (u, b) => api(u, { method: 'POST', body: b instanceof File ? b : JSON.stringify(b || {}) });
+const quando = iso => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+async function carregar() {
+  S = await api('/api/estado');
+  if (!atual && S.execucoes[0]) atual = S.execucoes[0].id;
+  if (atual) execAtual = await api('/api/execucoes/' + atual);
+  desenhar();
+}
+function desenhar() {
+  $('#nav').innerHTML = Object.entries(TELAS).map(([k, n]) => `<button class="${k === tela ? 'on' : ''}" onclick="ir('${k}')">${n}</button>`).join('');
+  $('#agendaPill').innerHTML = `<span class="dot" style="background:${S.config.ativo ? 'var(--ok)' : 'var(--erro)'}"></span> agenda ${S.config.ativo ? 'ligada' : 'desligada'}`;
+  $('#relogio').textContent = `Brasília ${S.agora.hora}`;
+  ({ fluxo: telaFluxo, execucoes: telaExecs, agentes: telaAgentes, relatorios: telaRel, config: telaConfig })[tela]();
+}
+function ir(t) { tela = t; location.hash = '#/' + t; desenhar(); }
+
+// ---------------- FLUXO ----------------
+function telaFluxo() {
+  const falta = S.chaves.filter(c => !c.ok && ['ANTHROPIC_API_KEY'].includes(c.k));
+  const e = execAtual;
+  $('#tela').innerHTML = `
+    ${falta.length ? `<div class="aviso">⚠️ Falta configurar a chave do Claude. Vá em <a href="#" onclick="ir('config')">Configurações</a>. Sem ela os agentes não trabalham.</div>` : ''}
+    <div class="caixa"><h2>Criar vídeo agora</h2>
+      <div class="linha">
+        <div><label>Ideia (deixe vazio para o Pesquisador escolher o tema do dia)</label><input id="ideia" placeholder="ex.: 13º salário: a 2ª parcela pode vir maior"></div>
+        <div style="max-width:240px"><label>Estilo</label><select id="estilo"><option value="">Rodízio automático</option>${S.estilos.map(x => `<option value="${x.k}">${esc(x.nome)}</option>`).join('')}</select></div>
+        <button class="btn" onclick="criar()">▶ Rodar fluxo</button>
+      </div>
+    </div>
+    ${e ? `
+    <div class="caixa"><h2>${esc(e.dados?.roteiro?.titulo || e.dados?.pauta?.tema || e.ideia || 'Vídeo do dia')}</h2>
+      <div class="mini" style="margin-bottom:10px">Execução ${esc(e.id)} · estilo ${esc(e.estilo)} · ${esc(e.status)} · gasto ~US$ ${(e.custo || 0).toFixed(2)} · ${quando(e.criado)}
+        ${S.execucoes.length > 1 ? ` · <select style="width:auto;padding:3px" onchange="abrir(this.value)">${S.execucoes.map(x => `<option value="${x.id}" ${x.id === e.id ? 'selected' : ''}>${quando(x.criado)} · ${esc((x.titulo || x.tema || x.id).slice(0, 40))}</option>`).join('')}</select>` : ''}
+        ${e.status === 'erro' && !e.rodando ? ` · <button class="btn sec" style="padding:3px 10px" onclick="continuar()">↻ tentar de novo</button>` : ''}
+      </div>
+      <div id="canvas"></div>
+    </div>
+    ${blocoAcao(e)}
+    <div class="caixa"><h2>Conversa dos agentes</h2><div class="chat" id="chat">${e.conversa.length ? e.conversa.map(msgHtml).join('') : '<div class="vazio">Os agentes ainda não falaram.</div>'}</div></div>
+    ` : `<div class="caixa vazio">Nenhum vídeo ainda. Clique em <b>Rodar fluxo</b> ou ligue a agenda em Configurações.</div>`}`;
+  if (e) { desenharCanvas(e); const c = $('#chat'); c.scrollTop = c.scrollHeight; }
+}
+function msgHtml(m) {
+  return `<div class="msg" style="border-left-color:${m.cor}"><div class="q"><span class="dot" style="background:${m.cor}"></span><b>${esc(m.de ? m.de + ' → ' + m.nome : m.nome)}</b> ${quando(m.t)}</div><pre>${esc(m.texto)}</pre>
+  ${m.fontes?.length ? `<details><summary>${m.fontes.length} fontes consultadas</summary>${m.fontes.map(f => `<div>• <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.titulo || f.url)}</a> ${esc(f.data || '')}</div>`).join('')}</details>` : ''}</div>`;
+}
+function desenharCanvas(e) {
+  const cv = $('#canvas'), estreito = cv.clientWidth < 760;
+  const W = 200, H = 64, GX = estreito ? 0 : 60, GY = estreito ? 34 : 70;
+  const pos = S.etapas.map((s, i) => estreito ? { x: Math.max(10, (cv.clientWidth - W) / 2), y: 20 + i * (H + GY) } : { x: 30 + s.x * (W + GX), y: 30 + s.y * (H + GY) });
+  const larg = estreito ? cv.clientWidth : 30 + 4 * (W + GX), alt = Math.max(...pos.map(p => p.y)) + H + 30;
+  let svg = `<svg width="${larg}" height="${alt}">`;
+  for (let i = 0; i < pos.length - 1; i++) {
+    const a = pos[i], b = pos[i + 1], ok = e.etapas[S.etapas[i].id].status === 'ok';
+    let d;
+    if (estreito || a.y !== b.y) { const x1 = a.x + W / 2, y1 = a.y + H, x2 = b.x + W / 2, y2 = b.y; d = `M${x1},${y1} C${x1},${y1 + 40} ${x2},${y2 - 40} ${x2},${y2}`; }
+    else if (b.x > a.x) { const y = a.y + H / 2; d = `M${a.x + W},${y} C${a.x + W + 30},${y} ${b.x - 30},${y} ${b.x},${y}`; }
+    else { const y = a.y + H / 2; d = `M${a.x},${y} C${a.x - 30},${y} ${b.x + W + 30},${y} ${b.x + W},${y}`; }
+    svg += `<path d="${d}" fill="none" stroke="${ok ? '#5dff9e' : '#3a3e4c'}" stroke-width="2.5" ${ok ? '' : 'stroke-dasharray="6 6"'}/>`;
+  }
+  svg += '</svg>';
+  cv.style.height = alt + 'px';
+  cv.innerHTML = svg + S.etapas.map((s, i) => {
+    const st = e.etapas[s.id].status, ag = s.agente ? S.agentes[s.agente] : null;
+    return `<div class="no ${st} ${noSel === s.id ? 'sel' : ''}" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${W}px" onclick="abrirNo('${s.id}')">
+      <span class="s">${ST[st] || st}</span><div class="t">${i + 1}. ${esc(s.nome)}</div>
+      <div class="a">${ag ? `<span class="dot" style="background:${ag.cor}"></span>${esc(ag.nome)}${ag.web ? ' · 🌐' : ''}` : '<span class="dot"></span>automático'}</div></div>`;
+  }).join('');
+}
+function abrirNo(id) {
+  noSel = id; const e = execAtual, st = e.etapas[id], s = S.etapas.find(x => x.id === id);
+  const d = $('#drawer'); d.classList.add('on');
+  d.innerHTML = `<button class="x" onclick="fecharNo()">×</button><h3 style="margin-top:0">${esc(s.nome)}</h3>
+    <div class="mini">Status: ${ST[st.status] || st.status}${st.inicio ? ' · início ' + quando(st.inicio) : ''}${st.fim ? ' · fim ' + quando(st.fim) : ''}</div>
+    ${st.erro ? `<div class="aviso" style="border-color:#ff5a5f88;background:#ff5a5f1a;margin-top:10px">${esc(st.erro)}</div>` : ''}
+    <label>Registro</label><div class="log">${st.log.map(l => esc(new Date(l.t).toLocaleTimeString('pt-BR') + '  ' + l.msg)).join('\n') || '—'}</div>
+    ${dadosDoNo(id, e)}
+    <div style="margin-top:14px"><button class="btn sec" onclick="refazer('${id}')" ${e.rodando ? 'disabled' : ''}>↻ Refazer a partir daqui</button></div>`;
+  desenharCanvas(e);
+}
+function fecharNo() { noSel = null; $('#drawer').classList.remove('on'); if (execAtual && tela === 'fluxo') desenharCanvas(execAtual); }
+function dadosDoNo(id, e) {
+  const D = e.dados || {}, arq = n => `/api/execucoes/${e.id}/arquivo/${n}`;
+  const pre = t => `<label>Resultado</label><div class="log" style="max-height:420px">${esc(t)}</div>`;
+  if (id === 'pauta' && D.pauta) return pre(JSON.stringify(D.pauta, null, 2));
+  if (id === 'checagem' && D.fatos) return pre(D.fatos.map(f => `• ${f.fato} — ${f.fonte} (${f.data})`).join('\n'));
+  if ((id === 'roteiro' || id === 'revisao') && D.roteiro) return pre(D.roteiro.segs.map((s, i) => `${i}. ${s}`).join('\n') + (D.revisao ? `\n\nNota do revisor: ${D.revisao.nota}/10` : ''));
+  if (id === 'cenas' && D.previa) return `<label>Prévia das cenas</label><img class="previa" src="${arq('previa.jpg')}?${Date.now()}"><div style="margin-top:8px"><a href="${arq('video.js')}" target="_blank">ver arquivo 3D</a></div>`;
+  if (id === 'voz' && D.roteiro) return pre(D.roteiro.narracao) + `<div style="margin-top:8px"><a href="${arq('voz.mp3')}" target="_blank">ouvir voz</a></div>`;
+  if (id === 'render') return `<label>Vídeo</label><video controls preload="none" src="${arq('video.mp4')}"></video>`;
+  if (id === 'legenda' && D.post) return pre(D.post.legenda + '\n\n— 1º comentário —\n' + D.post.comentario);
+  if (id === 'publicar' && D.publicado) return `<p>Publicado: <a href="${esc(D.publicado.link)}" target="_blank">${esc(D.publicado.link || 'ok')}</a></p>`;
+  return '';
+}
+function blocoAcao(e) {
+  const arq = n => `/api/execucoes/${e.id}/arquivo/${n}`, D = e.dados || {};
+  if (e.etapas.voz.status === 'aguardando') return `<div class="caixa" style="border-color:var(--acc)"><h2>🎙️ Falta a voz</h2>
+    <p>Gere a narração na ElevenLabs com o texto abaixo e envie o MP3 (ou configure a chave da ElevenLabs para isso ser automático).</p>
+    <div class="log" style="max-height:220px">${esc(D.roteiro?.narracao || '')}</div>
+    <div class="linha" style="margin-top:10px"><input type="file" id="mp3" accept="audio/mpeg,audio/*"><button class="btn" onclick="enviarVoz()">Enviar MP3</button></div></div>`;
+  if (e.etapas.aprovacao.status === 'aguardando') return `<div class="caixa" style="border-color:var(--acc)"><h2>🎬 Aprovar o vídeo</h2>
+    <div class="grade"><div><video controls src="${arq('video.mp4')}"></video></div>
+    <div><label>Legenda</label><div class="log" style="max-height:300px">${esc(D.post?.legenda)}</div><label>1º comentário (fontes)</label><div class="log" style="max-height:160px">${esc(D.post?.comentario)}</div>
+    <label>Se reprovar, diga o motivo (opcional)</label><input id="motivo">
+    <div class="linha" style="margin-top:10px"><button class="btn" onclick="aprovar(true)">✅ Aprovar e postar às ${esc(S.config.horarioPostagem)}</button><button class="btn verm" onclick="aprovar(false)">Reprovar</button></div></div></div></div>`;
+  if (e.etapas.publicar.status === 'manual') return `<div class="caixa" style="border-color:var(--acc)"><h2>📲 Pronto para você postar</h2>
+    <p>Sem token do Instagram, a postagem é manual (e assim você escolhe a música no app, volume 8 a 15).</p>
+    <div class="linha"><a class="btn" href="${arq('video.mp4')}" download>Baixar MP4</a><a class="btn sec" href="${arq('post.md')}" target="_blank">Legenda e fontes</a></div>
+    <div class="linha" style="margin-top:10px"><input id="linkPost" placeholder="link do post (opcional)"><button class="btn sec" onclick="marcarPostado()">Marcar como postado</button></div></div>`;
+  return '';
+}
+async function criar() { const r = await post('/api/execucoes', { ideia: $('#ideia').value, estilo: $('#estilo').value }); atual = r.id; await carregar(); }
+async function abrir(id) { atual = id; tela = 'fluxo'; noSel = null; $('#drawer').classList.remove('on'); await carregar(); }
+async function refazer(desde) { if (!confirm('Refazer esta etapa e as seguintes?')) return; await post(`/api/execucoes/${atual}/refazer`, { desde }); fecharNo(); carregar(); }
+async function continuar() { await post(`/api/execucoes/${atual}/continuar`); carregar(); }
+async function aprovar(ok) { await post(`/api/execucoes/${atual}/aprovar`, { ok, motivo: $('#motivo')?.value || '' }); carregar(); }
+async function enviarVoz() { const f = $('#mp3').files[0]; if (!f) return alert('Escolha o MP3.'); await fetch(`/api/execucoes/${atual}/voz`, { method: 'POST', body: f }); carregar(); }
+async function marcarPostado() { await post(`/api/execucoes/${atual}/postado`, { link: $('#linkPost').value }); carregar(); }
+
+// ---------------- EXECUÇÕES ----------------
+function telaExecs() {
+  $('#tela').innerHTML = `<div class="caixa"><h2>Execuções</h2>${S.execucoes.length ? `<table><tr><th>Quando</th><th>Vídeo</th><th>Estilo</th><th>Status</th><th>Gasto</th></tr>
+    ${S.execucoes.map(x => `<tr class="click" onclick="abrir('${x.id}')"><td>${quando(x.criado)}<div class="mini">${x.origem}</div></td><td>${esc(x.titulo || x.tema || '—')}${x.link ? `<div><a href="${esc(x.link)}" target="_blank" onclick="event.stopPropagation()">ver post</a></div>` : ''}</td><td>${x.estilo}</td><td>${esc(x.status)}</td><td>US$ ${x.custo.toFixed(2)}</td></tr>`).join('')}</table>` : '<div class="vazio">Nada ainda.</div>'}</div>`;
+}
+
+// ---------------- AGENTES ----------------
+function telaAgentes() {
+  $('#tela').innerHTML = `<div class="caixa"><h2>A equipe</h2><p class="mini">Cada vídeo passa por esta equipe. Eles conversam entre si: o Checador devolve a pauta ao Pesquisador até os fatos baterem, o Revisor devolve o roteiro ao Roteirista até nota 8, e o motor 3D devolve o erro ao Diretor até o arquivo rodar.</p>
+    <div class="grade">${Object.entries(S.agentes).map(([k, a]) => `<div class="msg" style="border-left-color:${a.cor}"><div class="q"><span class="dot" style="background:${a.cor}"></span><b>${esc(a.nome)}</b> ${a.web ? '· pesquisa na web' : ''} · modelo ${esc(S.config.modelos[a.modelo])}</div><pre>${esc(a.sistema.replace('{DURACAO}', S.config.duracaoAlvo))}</pre></div>`).join('')}</div></div>`;
+}
+
+// ---------------- RELATÓRIOS ----------------
+function telaRel() {
+  $('#tela').innerHTML = `<div class="caixa"><h2>Relatório diário</h2><p class="mini">Todo dia às ${esc(S.config.horarioRelatorio)} o Analista lê as métricas do Instagram, escreve o relatório e manda o recado para o Pesquisador do dia seguinte.</p>
+    <button class="btn sec" onclick="post('/api/relatorio').then(()=>setTimeout(carregar,1500))">Gerar relatório agora</button></div>
+    ${S.relatorios.map(r => `<div class="caixa"><h2>${esc(r.dia)} · ${esc(r.status)}</h2>${r.erro ? `<div class="aviso">${esc(r.erro)}</div>` : ''}
+      ${r.analise ? `<p>${esc(r.analise.resumo)}</p><b>Aprendizados</b><ul>${r.analise.aprendizados.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+      <b>Destaques</b><ul>${r.analise.destaques.map(d => `<li><b>${esc(d.post)}</b> · ${esc(d.metrica)}: ${esc(d.leitura)}</li>`).join('')}</ul>
+      <b>Próximas ideias</b><ul>${r.analise.proximas_ideias.map(i => `<li>${esc(i.tema)} <span class="mini">(${esc(i.formato)}) gancho: ${esc(i.gancho)}</span> <button class="btn sec" style="padding:2px 8px" onclick="filaIdeia(${esc(JSON.stringify(i.tema))})">+ fila</button></li>`).join('')}</ul>` : ''}
+      ${r.posts ? `<details><summary class="mini">${r.posts.length} posts lidos</summary><table>${r.posts.map(p => `<tr><td>${quando(p.data)}</td><td>${esc(p.legenda.slice(0, 60))}</td><td class="mini">${Object.entries(p.metricas).map(([k, v]) => k + ': ' + v).join(' · ')}</td></tr>`).join('')}</table></details>` : ''}</div>`).join('')}`;
+}
+async function filaIdeia(t) { const f = [...(S.config.ideiasNaFila || []), t]; await post('/api/config', { ideiasNaFila: f }); await carregar(); alert('Ideia adicionada à fila.'); }
+
+// ---------------- CONFIG ----------------
+function telaConfig() {
+  const c = S.config;
+  $('#tela').innerHTML = `<div class="grade">
+  <div class="caixa"><h2>Agenda diária</h2>
+    <label><input type="checkbox" id="c_ativo" style="width:auto" ${c.ativo ? 'checked' : ''}> Ligar o piloto automático (todo dia)</label>
+    <div class="linha"><div><label>Começa a criar</label><input type="time" id="c_hc" value="${c.horarioCriacao}"></div><div><label>Posta às</label><input type="time" id="c_hp" value="${c.horarioPostagem}"></div><div><label>Relatório às</label><input type="time" id="c_hr" value="${c.horarioRelatorio}"></div></div>
+    <label><input type="checkbox" id="c_apr" style="width:auto" ${c.aprovacaoHumana ? 'checked' : ''}> Esperar minha aprovação antes de postar (recomendado)</label>
+    <label>Rodízio de estilos (ordem, separados por vírgula)</label><input id="c_est" value="${c.estilos.join(', ')}">
+    <label>Duração alvo</label><input id="c_dur" value="${esc(c.duracaoAlvo)}">
+    <label>Nicho / assunto do perfil</label><textarea id="c_nicho">${esc(c.nicho)}</textarea>
+    <label>Temas proibidos</label><input id="c_proib" value="${esc(c.temasProibidos)}">
+    <label>Fila de ideias (uma por linha; passam na frente da pesquisa)</label><textarea id="c_fila">${esc((c.ideiasNaFila || []).join('\n'))}</textarea>
+    <div class="linha"><div><label>Modelo principal</label><input id="c_m1" value="${esc(c.modelos.principal)}"></div><div><label>Modelo dos revisores</label><input id="c_m2" value="${esc(c.modelos.rapido)}"></div></div>
+    <div class="linha"><div><label>Esforço</label><select id="c_esf">${['low', 'medium', 'high', 'xhigh'].map(x => `<option ${x === c.esforco ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div><label>Processos de render</label><input type="number" id="c_jobs" min="1" max="8" value="${c.jobsRender}"></div></div>
+    <div style="margin-top:14px"><button class="btn" onclick="salvarCfg()">Salvar</button></div>
+  </div>
+  <div class="caixa"><h2>Chaves e conexões</h2>
+    <p class="mini">As chaves ficam só no arquivo .env do servidor e nunca voltam para a tela. Deixe em branco para manter; digite <b>-</b> para apagar.</p>
+    ${S.chaves.map(k => `<div class="chave"><span class="dot ${k.ok ? 'on' : 'off'}"></span><label style="margin:8px 0 4px">${esc(k.nome)} ${k.dica ? `<span class="mini">(${esc(k.dica)})</span>` : ''}</label></div><input id="k_${k.k}" type="${/URL|ID/.test(k.k) ? 'text' : 'password'}" autocomplete="off" placeholder="${k.ok ? 'configurada' : 'não configurada'}">`).join('')}
+    <div class="linha" style="margin-top:14px"><button class="btn" onclick="salvarChaves()">Salvar chaves</button><button class="btn sec" onclick="testar()">Testar conexões</button></div>
+    <div id="teste" class="log" style="margin-top:10px;display:none"></div>
+  </div></div>`;
+}
+async function salvarCfg() {
+  const v = id => $('#' + id).value;
+  await post('/api/config', { ativo: $('#c_ativo').checked, aprovacaoHumana: $('#c_apr').checked, horarioCriacao: v('c_hc'), horarioPostagem: v('c_hp'), horarioRelatorio: v('c_hr'),
+    estilos: v('c_est').split(',').map(x => x.trim().toUpperCase()).filter(x => ['A', 'B', 'C'].includes(x)), duracaoAlvo: v('c_dur'), nicho: v('c_nicho'), temasProibidos: v('c_proib'),
+    ideiasNaFila: v('c_fila').split('\n').map(x => x.trim()).filter(Boolean), modelos: { principal: v('c_m1'), rapido: v('c_m2') }, esforco: v('c_esf'), jobsRender: +v('c_jobs') || 3 });
+  await carregar(); alert('Salvo.');
+}
+async function salvarChaves() { const b = {}; S.chaves.forEach(k => b[k.k] = $('#k_' + k.k).value); await post('/api/chaves', b); await carregar(); alert('Chaves salvas.'); }
+async function testar() { const t = $('#teste'); t.style.display = 'block'; t.textContent = 'Testando...'; const r = await post('/api/teste'); t.textContent = Object.entries(r).map(([k, v]) => `${v.ok ? '✅' : '❌'} ${k}: ${v.msg}`).join('\n'); }
+
+// ---------------- tempo real ----------------
+const ev = new EventSource('/api/eventos');
+let pend = null;
+ev.onmessage = m => { const d = JSON.parse(m.data); if (!S) return; clearTimeout(pend); pend = setTimeout(async () => {
+  if (d.id === atual) { execAtual = await api('/api/execucoes/' + atual); }
+  S = await api('/api/estado');
+  const focado = document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+  if (tela === 'config' || focado) return;
+  desenhar(); if (noSel) abrirNo(noSel);
+}, 400); };
+
+const h = location.hash.match(/#\/(\w+)(?:\/([\w-]+))?/);
+if (h) { if (h[1] === 'execucao') atual = h[2]; else if (TELAS[h[1]]) tela = h[1]; }
+carregar();
+setInterval(() => { if (S) { $('#relogio').textContent = 'Brasília ' + new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }); } }, 30000);
+addEventListener('resize', () => { if (tela === 'fluxo' && execAtual) desenharCanvas(execAtual); });
+</script>
+</body>
+</html>

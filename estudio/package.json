@@ -1,0 +1,17 @@
+{
+  "name": "estudio-estereo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Estúdio automático: agentes de IA que pesquisam, escrevem, montam, publicam e relatam os vídeos 3D do @estereoludico_",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "simular": "ESTUDIO_SIMULAR=1 node server.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
+    "playwright": "1.63.0"
+  }
+}

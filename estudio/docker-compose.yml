@@ -1,0 +1,12 @@
+# Na pasta do repositório:  docker compose -f estudio/docker-compose.yml up -d --build
+# As chaves ficam em estudio/dados/.env (preencha pelo painel, em Configurações).
+services:
+  estudio:
+    build: { context: .., dockerfile: estudio/Dockerfile }
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    environment:
+      ESTUDIO_ENV_FILE: /app/estudio/dados/.env
+    volumes:
+      - ./dados:/app/estudio/dados
+    shm_size: 1gb
